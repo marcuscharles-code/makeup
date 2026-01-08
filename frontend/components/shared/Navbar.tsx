@@ -1,126 +1,649 @@
-"use client"
-
-import { Mail, Search, Menu } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+'use client';
+import { useState } from 'react';
+import { Menu, Search, User, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from '@/components/ui/accordion';
-import Image from 'next/image';
-import Link from 'next/link';
+    NavigationMenu,
+    NavigationMenuContent,
+    NavigationMenuItem,
+    NavigationMenuLink,
+    NavigationMenuList,
+    NavigationMenuTrigger,
+    navigationMenuTriggerStyle,
+} from '@/components/ui/navigation-menu';
+import { allBrandNames, skincareCategories, makeupCategories } from '@/data/nav';
 
-export default function Navbar() {
+
+
+export default function EssenzaNavbar() {
+    const [cartCount, setCartCount] = useState(0);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    const brandItems = [
+        { name: 'Tom Ford', href: '#' },
+        { name: 'Creed', href: '#' },
+        { name: 'Maison Francis Kurkdjian', href: '#' },
+        { name: 'Byredo', href: '#' },
+    ];
+
+    const perfumeItems = [
+        { name: "Men's Fragrances", href: '#' },
+        { name: "Women's Fragrances", href: '#' },
+        { name: 'Unisex Fragrances', href: '#' },
+        { name: 'Niche Perfumes', href: '#' },
+    ];
+
+    const skincareItems = [
+        { name: 'Cleansers', href: '#' },
+        { name: 'Moisturizers', href: '#' },
+        { name: 'Serums', href: '#' },
+        { name: 'Masks', href: '#' },
+    ];
+
+    const makeupItems = [
+        { name: 'Face', href: '#' },
+        { name: 'Eyes', href: '#' },
+        { name: 'Lips', href: '#' },
+        { name: 'Tools', href: '#' },
+    ];
+
+    const giftItems = [
+        { name: 'Gift Sets', href: '#' },
+        { name: 'For Him', href: '#' },
+        { name: 'For Her', href: '#' },
+        { name: 'Luxury Gifts', href: '#' },
+    ];
+
     return (
-        <nav>
-            <div className='bg-[#222222] text-white flex gap-4 items-center p-4 flex-col md:flex-row justify-around py-2 font-bold'>
-                <p>Phone: <span>+123 456 7890</span></p>
-                <p>
-                    <Mail className='text-white inline mr-2' size={16} />
-                    <a
-                        className='text-[#EFBF04]'
-                        href="mailto:charm@gmail.com"
-                    >
-                        charm@gmail.com
-                    </a>
-                </p>
-            </div>
+        <nav className="w-full bg-white border-b">
+            {/* Mobile Header */}
+            <div className="md:hidden flex items-center justify-between px-4 py-3">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                >
+                    <Menu className="h-6 w-6" />
+                </Button>
 
-            <div className='py-12 flex flex-col gap-8 md:flex-row justify-around items-center'>
-                <div>
-                    <Image src="/images/logo.png" alt="Logo" width={150} height={150} />
+                <div className="flex items-center">
+                    <svg className="h-8" viewBox="0 0 120 40" fill="black">
+                        <text x="10" y="25" fontSize="18" fontWeight="bold">essenza</text>
+                    </svg>
                 </div>
 
-                <div className='flex items-center justify-center relative'>
-                    <Input
-                        className='w-48'
-                        type='search'
-                        placeholder='Search...'
-                    />
-                    <Search className='absolute right-3' size={16} />
+                <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon">
+                        <Search className="h-5 w-5" />
+                    </Button>
+                    <Button variant="ghost" size="icon">
+                        <User className="h-5 w-5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="relative">
+                        <ShoppingCart className="h-5 w-5" />
+                        {cartCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                                {cartCount}
+                            </span>
+                        )}
+                    </Button>
+                </div>
+            </div>
+
+            {/* Desktop Header */}
+            <div className="hidden md:flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
+                {/* Logo */}
+                <div className="flex items-center">
+                    <svg className="h-10" viewBox="0 0 120 40" fill="black">
+                        <text x="10" y="25" fontSize="20" fontWeight="bold">essenza</text>
+                    </svg>
+                </div>
+
+                {/* Search Bar */}
+                <div className="flex-1 max-w-2xl mx-8 flex gap-2">
+                    <div className="relative flex-1">
+                        <Input
+                            type="text"
+                            placeholder="Search..."
+                            className="w-full pr-4"
+                        />
+                    </div>
+                    <Select defaultValue="all">
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="All categories" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All categories</SelectItem>
+                            <SelectItem value="perfume">Perfume</SelectItem>
+                            <SelectItem value="skincare">Skincare</SelectItem>
+                            <SelectItem value="makeup">Make Up</SelectItem>
+                            <SelectItem value="gift">Gift</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Button className="bg-red-700 hover:bg-red-800 text-white px-6">
+                        <Search className="h-5 w-5" />
+                    </Button>
+                </div>
+
+                {/* Right Actions */}
+                <div className="flex items-center gap-6">
+                    <div className="text-sm">
+                        <div className="text-gray-600">Login / Signup</div>
+                        <Button className="font-medium hover:text-red-700">My account</Button>
+                    </div>
+                    <Button className="flex items-center gap-2 hover:text-red-700">
+                        <div className="relative">
+                            <ShoppingCart className="h-6 w-6" />
+                            {cartCount > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                                    {cartCount}
+                                </span>
+                            )}
+                        </div>
+                        <span className="font-medium">Cart</span>
+                    </Button>
+                </div>
+            </div>
+
+            {/* Navigation Menu - Desktop */}
+            <div className="hidden md:block border-t bg-gray-50">
+                <div className="max-w-7xl mx-auto px-6">
+                    <NavigationMenu>
+                        <NavigationMenuList className="gap-2">
+                            {/* ALL BRANDS */}
+                            <NavigationMenuItem>
+                                <NavigationMenuTrigger className="text-sm w-fit font-medium bg-transparent hover:text-red-700">
+                                    ALL BRANDS
+                                </NavigationMenuTrigger>
+                                <NavigationMenuContent>
+                                    <ul className="flex md:w-[800px] lg:w-[1200px] gap-3 p-4  ">
+                                        {/* Featured brands */}
+                                        <li className="col-span-2">
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">Featured</div>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {allBrandNames.featured.map((brand) => (
+                                                    <NavigationMenuLink key={brand} asChild>
+                                                        <a
+                                                            href={`/brands/${brand.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                            className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                        >
+                                                            <div className="text-sm font-medium leading-none">{brand}</div>
+                                                        </a>
+                                                    </NavigationMenuLink>
+                                                ))}
+                                            </div>
+                                        </li>
+
+                                        {/* Alphabetical sections */}
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">A - B</div>
+                                            {allBrandNames.A_B.map((brand) => (
+                                                <NavigationMenuLink key={brand} asChild>
+                                                    <a
+                                                        href={`/brands/${brand.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{brand}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">C - E</div>
+                                            {allBrandNames.C_E.map((brand) => (
+                                                <NavigationMenuLink key={brand} asChild>
+                                                    <a
+                                                        href={`/brands/${brand.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{brand}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">E - H</div>
+                                            {allBrandNames.E_H.map((brand) => (
+                                                <NavigationMenuLink key={brand} asChild>
+                                                    <a
+                                                        href={`/brands/${brand.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{brand}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">I - L</div>
+                                            {allBrandNames.I_L.map((brand) => (
+                                                <NavigationMenuLink key={brand} asChild>
+                                                    <a
+                                                        href={`/brands/${brand.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{brand}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">L - M</div>
+                                            {allBrandNames.L_M.map((brand) => (
+                                                <NavigationMenuLink key={brand} asChild>
+                                                    <a
+                                                        href={`/brands/${brand.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{brand}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">M - R</div>
+                                            {allBrandNames.M_R.map((brand) => (
+                                                <NavigationMenuLink key={brand} asChild>
+                                                    <a
+                                                        href={`/brands/${brand.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{brand}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">R - Z</div>
+                                            {allBrandNames.R_Z.map((brand) => (
+                                                <NavigationMenuLink key={brand} asChild>
+                                                    <a
+                                                        href={`/brands/${brand.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{brand}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+                                    </ul>
+                                </NavigationMenuContent>
+                            </NavigationMenuItem>
+
+                            {/* PERFUME */}
+                            <NavigationMenuItem>
+                                <NavigationMenuTrigger className="text-sm font-medium bg-transparent hover:text-red-700">
+                                    PERFUME
+                                </NavigationMenuTrigger>
+                                <NavigationMenuContent>
+                                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2">
+                                        {/* Featured perfumes */}
+                                        <li className="col-span-2">
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">Featured Perfumes</div>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {allBrandNames.featured.map((brand) => (
+                                                    <NavigationMenuLink key={brand} asChild>
+                                                        <a
+                                                            href={`/perfumes/brand/${brand.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                            className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                        >
+                                                            <div className="text-sm font-medium leading-none">{brand}</div>
+                                                        </a>
+                                                    </NavigationMenuLink>
+                                                ))}
+                                            </div>
+                                        </li>
+
+                                        {/* Browse by brand (alphabetically) */}
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">Browse by Brand</div>
+                                            {['A-B', 'C-E', 'E-H', 'I-L', 'L-M', 'M-R', 'R-Z'].map((range) => (
+                                                <NavigationMenuLink key={range} asChild>
+                                                    <a
+                                                        href={`/perfumes/brands/${range}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">Brands {range}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+
+                                        {/* All perfume brands link */}
+                                        <li>
+                                            <NavigationMenuLink asChild>
+                                                <a
+                                                    href="/perfumes/all-brands"
+                                                    className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground border-t pt-3"
+                                                >
+                                                    <div className="text-sm font-medium leading-none">View All Perfume Brands →</div>
+                                                </a>
+                                            </NavigationMenuLink>
+                                        </li>
+                                    </ul>
+                                </NavigationMenuContent>
+                            </NavigationMenuItem>
+
+                            {/* SKINCARE */}
+                            <NavigationMenuItem>
+                                <NavigationMenuTrigger className="text-sm font-medium bg-transparent hover:text-red-700">
+                                    SKINCARE
+                                </NavigationMenuTrigger>
+                                <NavigationMenuContent>
+                                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2">
+                                        {/* All Skincare */}
+                                        {skincareCategories.all.map((item) => (
+                                            <li key={item} className="col-span-2">
+                                                <NavigationMenuLink asChild>
+                                                    <a
+                                                        href="/skincare/all"
+                                                        className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{item}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            </li>
+                                        ))}
+
+                                        {/* Skincare Brands */}
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">Brands</div>
+                                            {skincareCategories.brands.map((brand) => (
+                                                <NavigationMenuLink key={brand} asChild>
+                                                    <a
+                                                        href={`/skincare/brand/${brand.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{brand}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+
+                                        {/* Face */}
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">{skincareCategories.face.title}</div>
+                                            {skincareCategories.face.items.map((item) => (
+                                                <NavigationMenuLink key={item} asChild>
+                                                    <a
+                                                        href={`/skincare/face/${item.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{item}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+
+                                        {/* Body */}
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">{skincareCategories.body.title}</div>
+                                            {skincareCategories.body.items.map((item) => (
+                                                <NavigationMenuLink key={item} asChild>
+                                                    <a
+                                                        href={`/skincare/body/${item.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{item}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+
+                                        {/* Men */}
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">{skincareCategories.men.title}</div>
+                                            {skincareCategories.men.items.map((item) => (
+                                                <NavigationMenuLink key={item} asChild>
+                                                    <a
+                                                        href={`/skincare/men/${item.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{item}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+                                    </ul>
+                                </NavigationMenuContent>
+                            </NavigationMenuItem>
+
+                            {/* MAKE UP */}
+                            <NavigationMenuItem>
+                                <NavigationMenuTrigger className="text-sm font-medium bg-transparent hover:text-red-700">
+                                    MAKE UP
+                                </NavigationMenuTrigger>
+                                <NavigationMenuContent>
+                                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2">
+                                        {/* All Makeup */}
+                                        {makeupCategories.all.map((item) => (
+                                            <li key={item} className="col-span-2">
+                                                <NavigationMenuLink asChild>
+                                                    <a
+                                                        href="/makeup/all"
+                                                        className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{item}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            </li>
+                                        ))}
+
+                                        {/* Makeup Brands */}
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">Brands</div>
+                                            {makeupCategories.brands.map((brand) => (
+                                                <NavigationMenuLink key={brand} asChild>
+                                                    <a
+                                                        href={`/makeup/brand/${brand.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{brand}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+
+                                        {/* Face */}
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">{makeupCategories.face.title}</div>
+                                            {makeupCategories.face.items.map((item) => (
+                                                <NavigationMenuLink key={item} asChild>
+                                                    <a
+                                                        href={`/makeup/face/${item.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{item}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+
+                                        {/* Eyes */}
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">{makeupCategories.eyes.title}</div>
+                                            {makeupCategories.eyes.items.map((item) => (
+                                                <NavigationMenuLink key={item} asChild>
+                                                    <a
+                                                        href={`/makeup/eyes/${item.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{item}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+
+                                        {/* Cheeks */}
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">{makeupCategories.cheeks.title}</div>
+                                            {makeupCategories.cheeks.items.map((item) => (
+                                                <NavigationMenuLink key={item} asChild>
+                                                    <a
+                                                        href={`/makeup/cheeks/${item.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{item}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+
+                                        {/* Lips */}
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">{makeupCategories.lips.title}</div>
+                                            {makeupCategories.lips.items.map((item) => (
+                                                <NavigationMenuLink key={item} asChild>
+                                                    <a
+                                                        href={`/makeup/lips/${item.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{item}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+
+                                        {/* Tools */}
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">{makeupCategories.tools.title}</div>
+                                            {makeupCategories.tools.items.map((item) => (
+                                                <NavigationMenuLink key={item} asChild>
+                                                    <a
+                                                        href={`/makeup/tools/${item.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{item}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+                                    </ul>
+                                </NavigationMenuContent>
+                            </NavigationMenuItem>
+
+                            {/* GIFT */}
+                            <NavigationMenuItem>
+                                <NavigationMenuTrigger className="text-sm font-medium bg-transparent hover:text-red-700">
+                                    GIFT
+                                </NavigationMenuTrigger>
+                                <NavigationMenuContent>
+                                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2">
+                                        {/* Gift ideas using featured brands */}
+                                        <li className="col-span-2">
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">Luxury Gift Sets</div>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {allBrandNames.featured.slice(0, 4).map((brand) => (
+                                                    <NavigationMenuLink key={brand} asChild>
+                                                        <a
+                                                            href={`/gifts/brand/${brand.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                            className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                        >
+                                                            <div className="text-sm font-medium leading-none">{brand} Gifts</div>
+                                                        </a>
+                                                    </NavigationMenuLink>
+                                                ))}
+                                            </div>
+                                        </li>
+
+                                        {/* Gift Categories */}
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">By Category</div>
+                                            {['Perfume Gift Sets', 'Skincare Gift Sets', 'Makeup Gift Sets', 'Luxury Collections', 'Holiday Specials'].map((item) => (
+                                                <NavigationMenuLink key={item} asChild>
+                                                    <a
+                                                        href={`/gifts/${item.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{item}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+
+                                        <li>
+                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">By Recipient</div>
+                                            {['For Her', 'For Him', 'Unisex Gifts', 'Anniversary Gifts', 'Birthday Gifts'].map((item) => (
+                                                <NavigationMenuLink key={item} asChild>
+                                                    <a
+                                                        href={`/gifts/${item.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                                        className="block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                                    >
+                                                        <div className="text-sm font-medium leading-none">{item}</div>
+                                                    </a>
+                                                </NavigationMenuLink>
+                                            ))}
+                                        </li>
+                                    </ul>
+                                </NavigationMenuContent>
+                            </NavigationMenuItem>
+
+                            {/* TIPS & TRENDS */}
+                            <NavigationMenuItem>
+                                <NavigationMenuLink
+                                    href="/tips-trends"
+                                    className={navigationMenuTriggerStyle() + " text-sm font-medium bg-transparent hover:text-red-700"}
+                                >
+                                    TIPS & TRENDS
+                                </NavigationMenuLink>
+                            </NavigationMenuItem>
+
+                            {/* OTHER BRANDS NOT HERE */}
+                            <NavigationMenuItem>
+                                <NavigationMenuLink
+                                    href="/other-brands"
+                                    className={navigationMenuTriggerStyle() + " text-sm font-medium bg-transparent hover:text-red-700"}
+                                >
+                                    OTHER BRANDS NOT HERE
+                                </NavigationMenuLink>
+                            </NavigationMenuItem>
+                        </NavigationMenuList>
+                    </NavigationMenu>
                 </div>
             </div>
 
             {/* Mobile Menu */}
-            <div className='md:hidden w-[80%] mx-auto mb-4 z-50'>
-                <Collapsible>
-                    <CollapsibleTrigger asChild>
-                        <div
-                            className='w-full rounded-none bg-[#C9A654] hover:bg-[#B39944] text-white flex items-center justify-between px-4 py-2'                           
-                        >
-                            <span className='font-semibold text-'>MENU</span>
-                            <Menu size={32} />
-                        </div>
-                    </CollapsibleTrigger>
-
-                    <CollapsibleContent className="bg-white border-x border-b">
-                        <Accordion type="single" collapsible className="w-full">
-                            <AccordionItem value="item-1" className="border-b px-4">
-                                <Link href="/" className="block py-4 font-semibold hover:text-[#C9A654]">
-                                    Home
-                                </Link>
-                            </AccordionItem>
-
-                            <AccordionItem value="item-2" className="px-4">
-                                <AccordionTrigger className="font-semibold hover:text-[#C9A654]">
-                                    About Us
-                                </AccordionTrigger>
-                                <AccordionContent>
-                                    <div className="flex flex-col gap-2 pl-4">
-                                        <Link href="/about/team" className="py-2 hover:text-[#C9A654]">Our Team</Link>
-                                        <Link href="/about/mission" className="py-2 hover:text-[#C9A654]">Our Mission</Link>
-                                        <Link href="/about/history" className="py-2 hover:text-[#C9A654]">History</Link>
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-
-                            <AccordionItem value="item-3" className="px-4">
-                                <AccordionTrigger className="font-semibold hover:text-[#C9A654]">
-                                    Perfume
-                                </AccordionTrigger>
-                                <AccordionContent>
-                                    <div className="flex flex-col gap-2 pl-4">
-                                        <Link href="/blog/latest" className="py-2 hover:text-[#C9A654]">Men</Link>
-                                        <Link href="/blog/categories" className="py-2 hover:text-[#C9A654]">Women</Link>
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                          
-                            <AccordionItem value="item-5" className="px-4">
-                                <AccordionTrigger className="font-semibold hover:text-[#C9A654]">
-                                    Shop
-                                </AccordionTrigger>
-                                <AccordionContent>
-                                    <div className="flex flex-col gap-2 pl-4">
-                                        <Link href="/shop/all" className="py-2 hover:text-[#C9A654]">All Products</Link>
-                                        <Link href="/shop/makeup" className="py-2 hover:text-[#C9A654]">Make Up</Link>
-                                        <Link href="/shop/gifts" className="py-2 hover:text-[#C9A654]">Gifts</Link>
-                                        <Link href="/shop/brands" className="py-2 hover:text-[#C9A654]">All Brands</Link>
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                           
-                            <AccordionItem value="item-7" className="border-b px-4">
-                                <Link href="/contact" className="block py-4 font-semibold hover:text-[#C9A654]">
-                                    Contact Us
-                                </Link>
-                            </AccordionItem>
-                        </Accordion>
-                    </CollapsibleContent>
-                </Collapsible>
-            </div>
-
-
-            <div className='hidden md:block'>
-                {/* Your desktop navigation menu */}
-            </div>
+            {isMobileMenuOpen && (
+                <div className="md:hidden border-t bg-white">
+                    <div className="flex flex-col p-4 space-y-3">
+                        <Button className="text-left text-sm font-medium py-2 hover:text-red-700">
+                            ALL BRANDS
+                        </Button>
+                        <Button className="text-left text-sm font-medium py-2 hover:text-red-700">
+                            PERFUME
+                        </Button>
+                        <Button className="text-left text-sm font-medium py-2 hover:text-red-700">
+                            SKINCARE
+                        </Button>
+                        <Button className="text-left text-sm font-medium py-2 hover:text-red-700">
+                            MAKE UP
+                        </Button>
+                        <Button className="text-left text-sm font-medium py-2 hover:text-red-700">
+                            GIFT
+                        </Button>
+                        <Button className="text-left text-sm font-medium py-2 hover:text-red-700">
+                            TIPS & TRENDS
+                        </Button>
+                        <Button className="text-left text-sm font-medium py-2 hover:text-red-700">
+                            OTHER BRANDS NOT HERE
+                        </Button>
+                    </div>
+                </div>
+            )}
         </nav>
     );
 }

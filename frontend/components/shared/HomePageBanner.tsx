@@ -5,7 +5,7 @@ import banner from "@/public/images/missperf.webp";
 export default function HomePageBanner() {
     return (
         <section>
-            <div className="space-y-6">
+            <div className="space-y-6 ">
                 <Image
                     alt=""
                     src={banner}
@@ -14,9 +14,9 @@ export default function HomePageBanner() {
                 />
             </div>
 
-            <div>
+            <div className="flex space-y-6 md:space-x-6  p-6 flex-col md:flex-row">
                 <div
-                    className="h-40 relative overflow-hidden"
+                    className="h-80 relative overflow-hidden"
                 >
                     <video
                         autoPlay
@@ -31,7 +31,7 @@ export default function HomePageBanner() {
                 </div>
 
                 <div
-                    className="w-full h-40 relative overflow-hidden"
+                    className="h-80 relative overflow-hidden"
                 >
                     <Image
                         src={banner2}
@@ -40,7 +40,7 @@ export default function HomePageBanner() {
                     />
                 </div>
 
-                <div className="h-40 relative overflow-hidden">
+                <div className="h-80 relative overflow-hidden">
                     <video
                         autoPlay
                         muted

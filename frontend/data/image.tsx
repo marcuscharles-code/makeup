@@ -8,8 +8,13 @@ import img7 from '@/public/products/17.webp';
 import img8 from '@/public/products/18.webp';
 
 
+import a from '@/public/images/aa.jpeg'
+import a1 from '@/public/images/aaa.jpeg'
+import a2 from '@/public/images/aaaa.jpeg'
 
 
 
 
-export { img1, img2, img3, img4, img5, img6, img7, img8 }
+
+
+export { img1, img2, img3, img4, img5, img6, img7, img8, a, a1, a2 };

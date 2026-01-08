@@ -21,10 +21,10 @@ export default function Footer() {
 
     return (
         <footer className="bg-black text-white">
-            <div className="hidden md:block max-w-7xl mx-auto px-6 py-12">
+            <div className="hidden md:block mx-auto px-12 py-12">
                 <div className="grid grid-cols-3 gap-12">
                     <div>
-                        <h3 className="text-sm font-semibold mb-6 tracking-wider">
+                        <h3 className="text-sm  mb-6 tracking-wider">
                             CONTACT US
                         </h3>
                         <div className="space-y-2 text-sm text-gray-300">
