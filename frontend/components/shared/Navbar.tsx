@@ -27,40 +27,7 @@ export default function EssenzaNavbar() {
     const [cartCount, setCartCount] = useState(0);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    const brandItems = [
-        { name: 'Tom Ford', href: '#' },
-        { name: 'Creed', href: '#' },
-        { name: 'Maison Francis Kurkdjian', href: '#' },
-        { name: 'Byredo', href: '#' },
-    ];
 
-    const perfumeItems = [
-        { name: "Men's Fragrances", href: '#' },
-        { name: "Women's Fragrances", href: '#' },
-        { name: 'Unisex Fragrances', href: '#' },
-        { name: 'Niche Perfumes', href: '#' },
-    ];
-
-    const skincareItems = [
-        { name: 'Cleansers', href: '#' },
-        { name: 'Moisturizers', href: '#' },
-        { name: 'Serums', href: '#' },
-        { name: 'Masks', href: '#' },
-    ];
-
-    const makeupItems = [
-        { name: 'Face', href: '#' },
-        { name: 'Eyes', href: '#' },
-        { name: 'Lips', href: '#' },
-        { name: 'Tools', href: '#' },
-    ];
-
-    const giftItems = [
-        { name: 'Gift Sets', href: '#' },
-        { name: 'For Him', href: '#' },
-        { name: 'For Her', href: '#' },
-        { name: 'Luxury Gifts', href: '#' },
-    ];
 
     return (
         <nav className="w-full bg-white border-b">
@@ -164,24 +131,7 @@ export default function EssenzaNavbar() {
                                     ALL BRANDS
                                 </NavigationMenuTrigger>
                                 <NavigationMenuContent>
-                                    <ul className="flex md:w-[800px] lg:w-[1200px] gap-3 p-4  ">
-                                        {/* Featured brands */}
-                                        <li className="col-span-2">
-                                            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">Featured</div>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                {allBrandNames.featured.map((brand) => (
-                                                    <NavigationMenuLink key={brand} asChild>
-                                                        <a
-                                                            href={`/brands/${brand.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-                                                            className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                                                        >
-                                                            <div className="text-sm font-medium leading-none">{brand}</div>
-                                                        </a>
-                                                    </NavigationMenuLink>
-                                                ))}
-                                            </div>
-                                        </li>
-
+                                    <ul className="grid w-[1200px] h-[400px] overflow-y-scroll gap-3 p-4 md:grid-cols-4">                                    
                                         {/* Alphabetical sections */}
                                         <li>
                                             <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">A - B</div>
