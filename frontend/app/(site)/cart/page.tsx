@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Minus, Plus, Gift, Truck, ChevronDown, Lock, ShieldCheck, BadgeCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,25 +11,59 @@ import {
 } from '@/components/ui/collapsible';
 import { Textarea } from '@/components/ui/textarea';
 import ProductSection from '@/components/shared/ProductGrid';
-import { products } from '@/data/product';
+import { getAuth } from 'firebase/auth';
+import { Product } from '@/components/shared/ProductGrid'
+import { db } from '@/firebase/firebaseConfig';
+import { addDoc, collection, getDocs, serverTimestamp, deleteDoc, doc, query, where, orderBy, Timestamp, } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
+
+
 
 export default function ShoppingCartPage() {
-    const [cartItems, setCartItems] = useState([
-        {
-            id: 1,
-            name: 'Armaf Club De Nuit Intense Man EDT 105ml',
-            price: 69000.00,
-            quantity: 2,
-            image: '/images/aaa.jpeg'
-        },
-        {
-            id: 1,
-            name: 'Armaf Club De Nuit Intense Man EDT 105ml',
-            price: 69000.00,
-            quantity: 2,
-            image: '/images/aaa.jpeg'
-        }
-    ]);
+    const [cartItems, setCartItems] = useState<any[]>([]);
+    const router = useRouter();
+    const [justIn, setJustIn] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchJustIn = async () => {
+            try {
+                const oneMonthAgo = Timestamp.fromDate(
+                    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                );
+
+                const q = query(
+                    collection(db, 'products'),
+                    where('status', '==', 'active'),
+                    where('createdAt', '>=', oneMonthAgo),
+                    orderBy('createdAt', 'desc')
+                );
+
+                const snapshot = await getDocs(q);
+
+                const justInProducts: Product[] = snapshot.docs.map((doc) => {
+                    const data = doc.data();
+
+                    return {
+                        id: doc.id,
+                        title: data.name,
+                        price: data.basePrice,
+                        img: data.images || [],
+                        brand: data.brand,
+                    };
+                });
+
+                setJustIn(justInProducts);
+            } catch (error) {
+                console.error('Error fetching Just In products:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchJustIn();
+    }, []);
+
 
     const guarantees = [
         {
@@ -54,6 +89,34 @@ export default function ShoppingCartPage() {
     const [isOrderInstructionsOpen, setIsOrderInstructionsOpen] = useState(false);
     const [isShippingEstimateOpen, setIsShippingEstimateOpen] = useState(false);
 
+
+
+
+    useEffect(() => {
+        const fetchCart = async () => {
+            const auth = getAuth();
+            const user = auth.currentUser;
+
+            if (!user) return;
+
+            const snap = await getDocs(
+                collection(db, 'users', user.uid, 'cart')
+            );
+
+            const items = snap.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+
+            console.log('🛒 Cart fetched:', items);
+
+            setCartItems(items as any[]);
+        };
+
+        fetchCart();
+    }, []);
+
+
     const updateQuantity = (id: number, newQuantity: number) => {
         if (newQuantity < 1) return;
         setCartItems(cartItems.map(item =>
@@ -76,6 +139,72 @@ export default function ShoppingCartPage() {
     const formatPrice = (price: number) => {
         return `₦${price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
+
+    const handleCheckout = async () => {
+        const auth = getAuth();
+        const user = auth.currentUser;
+
+        if (!user) {
+            alert('Please login first');
+            return;
+        }
+
+        if (cartItems.length === 0) {
+            alert('Cart is empty');
+            return;
+        }
+
+        try {
+            // Create order
+            const orderData = {
+                userId: user.uid,
+                items: cartItems,
+                total: getCartTotal(),
+                status: 'pending',
+                createdAt: serverTimestamp(),
+            };
+
+            const orderRef = await addDoc(
+                collection(db, 'orders'),
+                orderData
+            );
+
+            console.log('✅ Order created:', orderRef.id);
+
+            // Clear cart after creating order
+            await clearUserCart(user.uid);
+
+            // Redirect to checkout
+            router.push(`/checkout/${orderRef.id}`);
+
+        } catch (error) {
+            console.error('❌ Error creating order:', error);
+            alert('Error creating order. Please try again.');
+        }
+    };
+
+    // Add this function to clear cart
+    const clearUserCart = async (userId: string) => {
+        try {
+            const cartRef = collection(db, 'users', userId, 'cart');
+            const cartSnapshot = await getDocs(cartRef);
+
+            // Delete all cart items
+            const deletePromises = cartSnapshot.docs.map(docItem =>
+                deleteDoc(doc(db, 'users', userId, 'cart', docItem.id))
+            );
+
+            await Promise.all(deletePromises);
+            console.log('🛒 Cart cleared successfully');
+
+            // Update local state
+            setCartItems([]);
+
+        } catch (error) {
+            console.error('❌ Error clearing cart:', error);
+        }
+    };
+
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -207,7 +336,9 @@ export default function ShoppingCartPage() {
                             calculated at checkout
                         </p>
 
-                        <Button className="w-full bg-black hover:bg-gray-800 text-white py-6 text-base font-medium">
+                        <Button
+                            onClick={handleCheckout}
+                            className="w-full bg-black hover:bg-gray-800 text-white py-6 text-base font-medium">
                             Checkout
                         </Button>
 
@@ -254,7 +385,7 @@ export default function ShoppingCartPage() {
             </div>
 
 
-            <ProductSection title="Complete Your Cart" items={products} />
+            <ProductSection title="Complete Your Cart" items={justIn} />
         </div>
     );
 }

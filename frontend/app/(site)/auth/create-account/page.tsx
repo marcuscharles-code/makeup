@@ -1,13 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Chrome, Facebook, Linkedin, Mail } from 'lucide-react';
 import Link from 'next/link';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { auth, db } from '@/firebase/firebaseConfig';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { Chrome, Facebook, Linkedin, Mail } from 'lucide-react';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function CreateAccountForm() {
+    const router = useRouter();
+
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -15,9 +21,39 @@ export default function CreateAccountForm() {
         password: ''
     });
 
-    const handleSubmit = () => {
-        console.log('Form submitted:', formData);
+    const handleSubmit = async () => {
+        const { email, password, firstName, lastName } = formData;
+
+        if (!email || !password || !firstName || !lastName) {
+            alert('Please fill in all fields');
+            return;
+        }
+
+        try {
+            // 1. Create user in Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
+
+            const user = userCredential.user;
+            
+            await setDoc(doc(db, 'users', user.uid), {
+                uid: user.uid,
+                firstName,
+                lastName,
+                email,
+                createdAt: serverTimestamp(),
+            });
+
+            router.push('/');
+        } catch (error: any) {
+            console.error(error);
+            alert(error.message || 'Something went wrong');
+        }
     };
+
 
     const handleChange = (e: any) => {
         setFormData({

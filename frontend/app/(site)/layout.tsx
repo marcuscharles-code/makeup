@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
+import { AuthProvider } from '@/firebase/AuthContext';
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from 'next/script';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,13 +31,20 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <header>
-          <Navbar />
-        </header>
-        <main>
-          {children}
-        </main>
-        <Footer />
+        <AuthProvider>
+          <header>
+            <Navbar />
+          </header>
+          <main>
+            {children}
+          </main>
+          <Footer />
+        </AuthProvider>
+
+        <Script
+          src="https://js.paystack.co/v1/inline.js"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

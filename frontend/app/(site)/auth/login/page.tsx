@@ -4,19 +4,41 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/firebase/firebaseConfig';
+import { useRouter } from 'next/navigation';
 import { Chrome, Facebook, Linkedin, Mail } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CreateAccountForm() {
+    const router = useRouter();
+    const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        firstName: '',
-        lastName: '',
         email: '',
         password: ''
     });
 
-    const handleSubmit = () => {
-        console.log('Form submitted:', formData);
+
+    const handleSubmit = async () => {
+        const { email, password } = formData;
+
+        if (!email || !password) {
+            alert('Please enter email and password');
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            await signInWithEmailAndPassword(auth, email, password);
+          
+            router.push('/');
+        } catch (error: any) {
+            console.error(error);
+            alert(error.message || 'Invalid login credentials');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleChange = (e: any) => {
@@ -64,7 +86,7 @@ export default function CreateAccountForm() {
                             onClick={handleSubmit}
                             className="w-full rounded-none bg-black hover:bg-gray-800 text-white py-6 text-base"
                         >
-                            Create my account
+                            Login
                         </Button>
                     </div>
 
@@ -82,7 +104,7 @@ export default function CreateAccountForm() {
                         <p className="text-sm text-gray-600">
                             Forgot password?{' '}
                             <Link href="/auth/login" className="text-blue-600 hover:underline">
-                               Click here
+                                Click here
                             </Link>
                         </p>
                     </div>

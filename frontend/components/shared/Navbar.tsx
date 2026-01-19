@@ -1,8 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Menu, Search, User, ShoppingCart } from 'lucide-react';
+import MobileNavDrawer from './MobileNavDrawer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import Image from 'next/image';
 import {
     Select,
     SelectContent,
@@ -19,13 +21,57 @@ import {
     NavigationMenuTrigger,
     navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
+import { useRouter } from 'next/navigation';
 import { allBrandNames, skincareCategories, makeupCategories } from '@/data/nav';
+import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
+import { auth } from '@/firebase/firebaseConfig';
+import Link from 'next/link';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/firebase/firebaseConfig';
+import logo from "@/public/images/Fragrancebynayalogo2.png"
+import { getAuth } from 'firebase/auth';
 
 
 
 export default function EssenzaNavbar() {
+    const router = useRouter();
     const [cartCount, setCartCount] = useState(0);
+    const [user, setUser] = useState<FirebaseUser | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            setUser(currentUser);
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    useEffect(() => {
+        const fetchCartCount = async () => {
+            const auth = getAuth();
+            const user = auth.currentUser;
+
+            if (!user) {
+                setCartCount(0);
+                return;
+            }
+
+            try {
+                const cartSnap = await getDocs(collection(db, 'users', user.uid, 'cart'));
+                const count = cartSnap.docs.length;
+                setCartCount(count);
+                console.log('🛒 Cart Count:', count);
+            } catch (error) {
+                console.error('Error fetching cart count:', error);
+            }
+        };
+
+        fetchCartCount();
+    }, [user]);
+
+
 
 
 
@@ -41,10 +87,14 @@ export default function EssenzaNavbar() {
                     <Menu className="h-6 w-6" />
                 </Button>
 
-                <div className="flex items-center">
-                    <svg className="h-8" viewBox="0 0 120 40" fill="black">
-                        <text x="10" y="25" fontSize="18" fontWeight="bold">essenza</text>
-                    </svg>
+                <div
+                    onClick={() => { router.push('/') }}
+                    className="flex items-center cursor-pointer w-32 h-32 relative">
+                    <Image
+                        src={logo}
+                        alt=''
+                        className='h-full w-full object-contain'
+                    />
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -54,7 +104,9 @@ export default function EssenzaNavbar() {
                     <Button variant="ghost" size="icon">
                         <User className="h-5 w-5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="relative">
+                    <Button
+                        onClick={() => { router.push('/cart') }}
+                        variant="ghost" size="icon" className="relative">
                         <ShoppingCart className="h-5 w-5" />
                         {cartCount > 0 && (
                             <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
@@ -62,19 +114,24 @@ export default function EssenzaNavbar() {
                             </span>
                         )}
                     </Button>
+
                 </div>
             </div>
 
             {/* Desktop Header */}
             <div className="hidden md:flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
                 {/* Logo */}
-                <div className="flex items-center">
-                    <svg className="h-10" viewBox="0 0 120 40" fill="black">
-                        <text x="10" y="25" fontSize="20" fontWeight="bold">essenza</text>
-                    </svg>
+                <div
+                    onClick={() => { router.push('/') }}
+                    className="flex items-center cursor-pointer w-32 h-32 relative">
+                    <Image
+                        src={logo}
+                        alt=''
+                        className='h-full w-full object-contain'
+                    />
                 </div>
 
-                {/* Search Bar */}
+
                 <div className="flex-1 max-w-2xl mx-8 flex gap-2">
                     <div className="relative flex-1">
                         <Input
@@ -100,24 +157,62 @@ export default function EssenzaNavbar() {
                     </Button>
                 </div>
 
+
+                <Button
+                    onClick={() => { router.push('/cart') }}
+                    variant="ghost" size="icon" className="relative">
+                    <ShoppingCart className="h-5 w-5" />
+                    {cartCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                            {cartCount}
+                        </span>
+                    )}
+                </Button>
+
+
                 {/* Right Actions */}
-                <div className="flex items-center gap-6">
-                    <div className="text-sm">
-                        <div className="text-gray-600">Login / Signup</div>
-                        <Button className="font-medium hover:text-red-700">My account</Button>
-                    </div>
-                    <Button className="flex items-center gap-2 hover:text-red-700">
-                        <div className="relative">
-                            <ShoppingCart className="h-6 w-6" />
-                            {cartCount > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
-                                    {cartCount}
-                                </span>
-                            )}
-                        </div>
-                        <span className="font-medium">Cart</span>
-                    </Button>
+                <div className="text-sm text-right">
+                    {!user ? (
+                        <>
+                            <div className="flex items-center gap-4">
+                                <Link href="/auth/login">
+                                    <Button
+                                        variant="ghost"
+                                        className="font-medium text-gray-700 hover:text-primary hover:bg-transparent px-4 py-2"
+                                    >
+                                        Login
+                                    </Button>
+                                </Link>
+                                <div className="h-4 w-px bg-gray-300" />
+                                <Link href="/auth/create-account">
+                                    <Button
+                                        className="font-medium bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-2 rounded-full shadow-sm hover:shadow transition-all"
+                                    >
+                                        Sign Up
+                                    </Button>
+                                </Link>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="flex gap-3 justify-end">
+                                <Link href="/my-account">
+                                    <Button variant="ghost" className="p-0 font-medium hover:text-red-700">
+                                        My account
+                                    </Button>
+                                </Link>
+                                <Button
+                                    variant="ghost"
+                                    className="p-0 font-medium text-red-600 hover:text-red-700"
+                                    onClick={() => signOut(auth)}
+                                >
+                                    Logout
+                                </Button>
+                            </div>
+                        </>
+                    )}
                 </div>
+
             </div>
 
             {/* Navigation Menu - Desktop */}
@@ -131,7 +226,7 @@ export default function EssenzaNavbar() {
                                     ALL BRANDS
                                 </NavigationMenuTrigger>
                                 <NavigationMenuContent>
-                                    <ul className="grid w-[1200px] h-[400px] overflow-y-scroll gap-3 p-4 md:grid-cols-4">                                    
+                                    <ul className="grid w-[1200px] h-[400px] overflow-y-scroll gap-3 p-4 md:grid-cols-4">
                                         {/* Alphabetical sections */}
                                         <li>
                                             <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">A - B</div>
@@ -566,34 +661,8 @@ export default function EssenzaNavbar() {
                 </div>
             </div>
 
-            {/* Mobile Menu */}
-            {isMobileMenuOpen && (
-                <div className="md:hidden border-t bg-white">
-                    <div className="flex flex-col p-4 space-y-3">
-                        <Button className="text-left text-sm font-medium py-2 hover:text-red-700">
-                            ALL BRANDS
-                        </Button>
-                        <Button className="text-left text-sm font-medium py-2 hover:text-red-700">
-                            PERFUME
-                        </Button>
-                        <Button className="text-left text-sm font-medium py-2 hover:text-red-700">
-                            SKINCARE
-                        </Button>
-                        <Button className="text-left text-sm font-medium py-2 hover:text-red-700">
-                            MAKE UP
-                        </Button>
-                        <Button className="text-left text-sm font-medium py-2 hover:text-red-700">
-                            GIFT
-                        </Button>
-                        <Button className="text-left text-sm font-medium py-2 hover:text-red-700">
-                            TIPS & TRENDS
-                        </Button>
-                        <Button className="text-left text-sm font-medium py-2 hover:text-red-700">
-                            OTHER BRANDS NOT HERE
-                        </Button>
-                    </div>
-                </div>
-            )}
+            {/* Mobile Menu - Now visible on mobile, hidden on desktop */}
+            <MobileNavDrawer isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
         </nav>
     );
 }

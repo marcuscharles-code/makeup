@@ -12,10 +12,8 @@ import {
     UserPlus,
     TrendingUp,
     DollarSign,
-    Star,
     Phone,
-    ShoppingBag,
-    X
+    ShoppingBag
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -25,10 +23,26 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 
+interface Customer {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    totalOrders: number;
+    totalSpent: string;
+    status: 'Active' | 'Inactive' | 'New';
+    joinDate: string;
+    lastOrder: string;
+}
+
+
+
 export default function CustomersPage() {
+
     const [selectedFilter, setSelectedFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+
 
     const customerStats = [
         {
@@ -61,7 +75,7 @@ export default function CustomersPage() {
         }
     ];
 
-    const customers = [
+    const customers: Customer[] = [
         {
             id: 'C001',
             name: 'John Doe',
@@ -72,7 +86,7 @@ export default function CustomersPage() {
             status: 'Active',
             joinDate: '2025-08-15',
             lastOrder: '2026-01-08',
-            tier: 'Gold'
+           
         },
         {
             id: 'C002',
@@ -84,7 +98,7 @@ export default function CustomersPage() {
             status: 'Active',
             joinDate: '2025-09-22',
             lastOrder: '2026-01-07',
-            tier: 'Silver'
+           
         },
         {
             id: 'C003',
@@ -96,7 +110,7 @@ export default function CustomersPage() {
             status: 'Active',
             joinDate: '2025-05-10',
             lastOrder: '2026-01-06',
-            tier: 'Platinum'
+           
         },
         {
             id: 'C004',
@@ -108,7 +122,7 @@ export default function CustomersPage() {
             status: 'Active',
             joinDate: '2025-11-03',
             lastOrder: '2026-01-05',
-            tier: 'Bronze'
+        
         },
         {
             id: 'C005',
@@ -120,7 +134,7 @@ export default function CustomersPage() {
             status: 'Inactive',
             joinDate: '2025-10-18',
             lastOrder: '2025-12-20',
-            tier: 'Bronze'
+          
         },
         {
             id: 'C006',
@@ -132,7 +146,7 @@ export default function CustomersPage() {
             status: 'Active',
             joinDate: '2025-07-08',
             lastOrder: '2026-01-08',
-            tier: 'Gold'
+           
         },
         {
             id: 'C007',
@@ -144,7 +158,7 @@ export default function CustomersPage() {
             status: 'Active',
             joinDate: '2025-06-14',
             lastOrder: '2026-01-07',
-            tier: 'Gold'
+           
         },
         {
             id: 'C008',
@@ -156,7 +170,7 @@ export default function CustomersPage() {
             status: 'New',
             joinDate: '2026-01-02',
             lastOrder: '2026-01-05',
-            tier: 'Bronze'
+           
         }
     ];
 
@@ -167,7 +181,7 @@ export default function CustomersPage() {
         { label: 'Inactive', value: 'Inactive', count: customers.filter(c => c.status === 'Inactive').length }
     ];
 
-    const getStatusVariant = (status) => {
+    const getStatusVariant = (status: string) => {
         switch (status) {
             case 'Active': return 'default';
             case 'Inactive': return 'destructive';
@@ -176,20 +190,11 @@ export default function CustomersPage() {
         }
     };
 
-    const getTierVariant = (tier) => {
-        switch (tier) {
-            case 'Platinum': return 'default';
-            case 'Gold': return 'secondary';
-            case 'Silver': return 'outline';
-            case 'Bronze': return 'outline';
-            default: return 'outline';
-        }
-    };
+
 
     const filteredCustomers = customers.filter(customer => {
         const matchesFilter = selectedFilter === 'all' ||
-            customer.status === selectedFilter ||
-            customer.tier === selectedFilter;
+            customer.status === selectedFilter;
         const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
             customer.id.toLowerCase().includes(searchTerm.toLowerCase());
@@ -224,7 +229,7 @@ export default function CustomersPage() {
                         <Card key={index} className="hover:shadow-lg transition-shadow">
                             <CardContent className="p-4">
                                 <div className="flex items-center gap-3">
-                                    <div className={`${stat.color} w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0`}>
+                                    <div className={`${stat.color} w-10 h-10 rounded-lg flex items-center justify-center shrink-0`}>
                                         <Icon className="w-5 h-5 text-white" />
                                     </div>
                                     <div className="flex-1">
@@ -264,7 +269,7 @@ export default function CustomersPage() {
                                 <TabsTrigger
                                     key={filter.value}
                                     value={filter.value}
-                                    className="flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-white"
+                                    className="shrink-0 data-[state=active]:bg-primary data-[state=active]:text-white"
                                 >
                                     {filter.label}
                                     <Badge
@@ -309,7 +314,7 @@ export default function CustomersPage() {
                                         <TableRow key={index}>
                                             <TableCell className="whitespace-nowrap">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                                                    <div className="w-8 h-8 md:w-10 md:h-10 bg-linear-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
                                                         {customer.name.split(' ').map(n => n[0]).join('')}
                                                     </div>
                                                     <div>
@@ -329,9 +334,9 @@ export default function CustomersPage() {
                                                 <Badge variant="outline" className="font-medium">
                                                     {customer.totalOrders}
                                                 </Badge>
-                                            </TableCell>                                         
-                                        
-                                           
+                                            </TableCell>
+
+
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-1 sm:gap-2">
                                                     <Button
@@ -427,7 +432,7 @@ export default function CustomersPage() {
 
                             {/* Customer Header */}
                             <div className="flex items-center gap-4 pb-4 border-b">
-                                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
+                                <div className="w-16 h-16 bg-linear-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xl shrink-0">
                                     {selectedCustomer.name.split(' ').map(n => n[0]).join('')}
                                 </div>
                                 <div className="flex-1">
@@ -436,11 +441,7 @@ export default function CustomersPage() {
                                     <div className="flex gap-2 mt-2">
                                         <Badge variant={getStatusVariant(selectedCustomer.status)}>
                                             {selectedCustomer.status}
-                                        </Badge>
-                                        <Badge variant={getTierVariant(selectedCustomer.tier)} className="gap-1">
-                                            <Star className="w-3 h-3 fill-current" />
-                                            {selectedCustomer.tier}
-                                        </Badge>
+                                        </Badge>                                      
                                     </div>
                                 </div>
                             </div>

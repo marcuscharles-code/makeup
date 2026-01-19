@@ -11,6 +11,7 @@ import { collection, doc, setDoc, addDoc, serverTimestamp } from 'firebase/fires
 import { db } from '@/firebase/firebaseConfig';
 import { Separator } from '@/components/ui/separator';
 import { BarChart } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 // Types
 interface ProductImage {
@@ -54,6 +55,7 @@ interface ProductData {
 }
 
 export default function Page() {
+    const router = useRouter();
     const [product, setProduct] = useState<ProductData>({
         name: '',
         description: '',
@@ -245,8 +247,9 @@ export default function Page() {
                 moq: Number(product.moq),
                 sku: product.sku,
                 status: product.status,
+                stock: product.stock,
                 images: imageUrls,
-                mainImage: [0],
+                mainImage: imageUrls[0],
                 hasVariants: product.variants.length > 0,
                 variantCount: product.variants.length,
                 createdAt: serverTimestamp(),
@@ -401,20 +404,20 @@ export default function Page() {
                     />
                 )}
 
-                {/* Submit Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 justify-end">
                     <Button
                         type="button"
                         variant="outline"
                         onClick={() => {
                             if (confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
-                                window.location.reload();
+                                router.push('/panel-access/products/add-product');
                             }
                         }}
                         disabled={isSubmitting}
                     >
                         Cancel
                     </Button>
+
                     <Button
                         type="submit"
                         disabled={isSubmitting}
