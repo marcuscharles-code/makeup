@@ -1,20 +1,28 @@
 import Image from "next/image";
-import banner2 from "@/public/images/1629.jpg";
-import banner from "@/public/images/missperf.webp";
+import banner2 from "@/public/gif/bamma.gif";
+import banner from "@/public/videos/banner.gif";
 
 export default function HomePageBanner() {
     return (
         <section>
-            <div className="space-y-6 ">
+            <div className="hidden md:block space-y-6 w-full h-[80vh] relative overflow-hidden">
+                <Image
+                    alt=""
+                    src={banner2}
+                    className="w-full h-full object-contain  "
+                    priority
+                />
+            </div>
+            <div className="md:hidden  w-full h-auto relative overflow-hidden">
                 <Image
                     alt=""
                     src={banner}
-                    className="w-full h-auto"
+                    className="w-full h-full object-contain  "
                     priority
                 />
             </div>
 
-            <div className="flex space-y-6 md:space-x-6  p-6 flex-col md:flex-row">
+            {/* <div className="flex space-y-6 md:space-x-6  p-6 flex-col md:flex-row">
                 <div
                     className="h-80 relative overflow-hidden"
                 >
@@ -53,7 +61,7 @@ export default function HomePageBanner() {
                     </video>
                 </div>
 
-            </div>
+            </div> */}
         </section>
     );
 }

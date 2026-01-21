@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
+import WhatsAppButton from '@/components/shared/whatsapp';
 import { AuthProvider } from '@/firebase/AuthContext';
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from 'next/script';
@@ -37,6 +38,7 @@ export default function RootLayout({
           </header>
           <main>
             {children}
+            <WhatsAppButton />
           </main>
           <Footer />
         </AuthProvider>

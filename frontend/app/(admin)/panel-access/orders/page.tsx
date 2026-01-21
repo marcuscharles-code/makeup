@@ -1,10 +1,18 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
+    collection,
+    query,
+    getDocs,
+    orderBy
+} from "firebase/firestore";
+import Image from 'next/image';
+import { db } from "@/firebase/firebaseConfig";
+import {
     Search,
-    Filter,
     Download,
     Eye,
     MoreVertical,
@@ -13,8 +21,9 @@ import {
     ShoppingCart,
     DollarSign,
     Package,
-    ChevronDown,
-    X
+    User,
+    MapPin,
+    Phone
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -25,22 +34,43 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 
+interface OrderItem {
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    image: string;
+    productId: string;
+}
+
+interface DeliveryAddress {
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+}
+
 interface Order {
     id: string;
     customer: string;
     email: string;
+    phone: string;
     products: string;
     quantity: number;
     amount: string;
-    status: 'Completed' | 'Processing' | 'Pending' | 'Shipped' | 'Cancelled';
+    status: 'completed' | 'processing' | 'pending' | 'shipped' | 'cancelled';
     date: string;
-    payment: string;
+    paymentMethod: string;
+    paymentStatus: string;
+    deliveryAddress: DeliveryAddress;
+    deliveryMethod: string;
+    items: OrderItem[];
+    total: number;
 }
 
 interface OrderStat {
     title: string;
     value: string;
-    change: string;
     icon: React.ElementType;
     color: string;
 }
@@ -51,197 +81,210 @@ interface FilterOption {
     count: number;
 }
 
+const capitalize = (text: string) =>
+    text.charAt(0).toUpperCase() + text.slice(1);
+
+const formatPaymentStatus = (status: string): string => {
+    const statusMap: Record<string, string> = {
+        'pending_bank_transfer': 'Pending Bank Transfer',
+        'paid': 'Paid',
+        'failed': 'Failed',
+        'refunded': 'Refunded'
+    };
+    return statusMap[status] || capitalize(status.replace('_', ' '));
+};
+
 export default function OrdersPage() {
     const [selectedFilter, setSelectedFilter] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-    const [dateRange, setDateRange] = useState('last-7-days');
+    const [dateRange, setDateRange] = useState('all');
+    const [orders, setOrders] = useState<Order[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({
+        totalOrders: 0,
+        totalRevenue: 0,
+        pendingOrders: 0,
+        completedOrders: 0
+    });
 
     const orderStats: OrderStat[] = [
         {
             title: 'Total Orders',
-            value: '2,345',
-            change: '+12.5%',
+            value: stats.totalOrders.toLocaleString(),          
             icon: ShoppingCart,
             color: 'bg-blue-500'
         },
         {
             title: 'Pending Orders',
-            value: '156',
-            change: '+8.2%',
+            value: stats.pendingOrders.toString(),           
             icon: Package,
             color: 'bg-yellow-500'
         },
         {
             title: 'Completed',
-            value: '2,089',
-            change: '+15.3%',
+            value: stats.completedOrders.toString(),          
             icon: TrendingUp,
             color: 'bg-green-500'
         },
         {
             title: 'Total Revenue',
-            value: '$186,234',
-            change: '+20.1%',
+            value: `₦${stats.totalRevenue.toLocaleString()}`,           
             icon: DollarSign,
             color: 'bg-purple-500'
         }
     ];
 
-    const orders: Order[] = [
-        {
-            id: '#3210',
-            customer: 'John Doe',
-            email: 'john.doe@email.com',
-            products: 'Chanel No. 5, Dior Sauvage',
-            quantity: 2,
-            amount: '$224.00',
-            status: 'Completed',
-            date: '2026-01-08',
-            payment: 'Credit Card'
-        },
-        {
-            id: '#3209',
-            customer: 'Jane Smith',
-            email: 'jane.smith@email.com',
-            products: 'Dior Sauvage',
-            quantity: 1,
-            amount: '$95.00',
-            status: 'Processing',
-            date: '2026-01-08',
-            payment: 'PayPal'
-        },
-        {
-            id: '#3208',
-            customer: 'Mike Johnson',
-            email: 'mike.j@email.com',
-            products: 'Tom Ford Black Orchid',
-            quantity: 1,
-            amount: '$185.00',
-            status: 'Pending',
-            date: '2026-01-07',
-            payment: 'Credit Card'
-        },
-        {
-            id: '#3207',
-            customer: 'Sarah Williams',
-            email: 'sarah.w@email.com',
-            products: 'Versace Eros',
-            quantity: 1,
-            amount: '$78.00',
-            status: 'Completed',
-            date: '2026-01-07',
-            payment: 'Debit Card'
-        },
-        {
-            id: '#3206',
-            customer: 'Chris Brown',
-            email: 'chris.b@email.com',
-            products: 'Gucci Bloom',
-            quantity: 1,
-            amount: '$112.00',
-            status: 'Cancelled',
-            date: '2026-01-06',
-            payment: 'Credit Card'
-        },
-        {
-            id: '#3205',
-            customer: 'Emily Davis',
-            email: 'emily.d@email.com',
-            products: 'Chanel No. 5, Versace Eros',
-            quantity: 2,
-            amount: '$207.00',
-            status: 'Completed',
-            date: '2026-01-06',
-            payment: 'PayPal'
-        },
-        {
-            id: '#3204',
-            customer: 'David Wilson',
-            email: 'david.w@email.com',
-            products: 'Tom Ford Black Orchid',
-            quantity: 3,
-            amount: '$555.00',
-            status: 'Processing',
-            date: '2026-01-05',
-            payment: 'Credit Card'
-        },
-        {
-            id: '#3203',
-            customer: 'Lisa Anderson',
-            email: 'lisa.a@email.com',
-            products: 'Dior Sauvage',
-            quantity: 1,
-            amount: '$95.00',
-            status: 'Shipped',
-            date: '2026-01-05',
-            payment: 'Debit Card'
-        }
-    ];
+    useEffect(() => {
+        const loadOrders = async () => {
+            try {
+                const q = query(
+                    collection(db, "orders"),
+                    orderBy("createdAt", "desc")
+                );
+
+                const snapshot = await getDocs(q);
+
+                const fetchedOrders: Order[] = [];
+                let totalRevenue = 0;
+                let pendingOrders = 0;
+                let completedOrders = 0;
+
+                snapshot.docs.forEach(doc => {
+                    const data = doc.data();
+
+                    // Calculate order total
+                    const total = data.total || 0;
+                    totalRevenue += total;
+
+                    // Get order status
+                    const status = data.status || 'pending';
+                    if (status === 'pending' || status === 'processing') {
+                        pendingOrders++;
+                    } else if (status === 'completed' || status === 'shipped') {
+                        completedOrders++;
+                    }
+
+                   
+                    let dateString = '';
+                    if (data.createdAt) {
+                        const date = data.createdAt.toDate();
+                        dateString = date.toISOString().split('T')[0];
+                    }
+
+                    // Format products string
+                    const items = data.items || [];
+                    const products = items.map((item: any) =>
+                        `${item.name} (x${item.quantity})`
+                    ).join(', ') || "No products";
+
+                    const totalQuantity = items.reduce(
+                        (sum: number, item: any) => sum + (item.quantity || 0),
+                        0
+                    );
+
+                    const order: Order = {
+                        id: doc.id,
+                        customer: data.customerName || "Unknown Customer",
+                        email: data.email || "N/A",
+                        phone: data.customerPhone || "N/A",
+                        products,
+                        quantity: totalQuantity,
+                        amount: `₦${total.toLocaleString()}`,
+                        status: status.toLowerCase() as Order['status'],
+                        date: dateString,
+                        paymentMethod: data.paymentMethod || "N/A",
+                        paymentStatus: formatPaymentStatus(data.paymentStatus || 'pending'),
+                        deliveryAddress: data.deliveryAddress || {
+                            address: '',
+                            city: '',
+                            state: '',
+                            country: ''
+                        },
+                        deliveryMethod: data.deliveryMethod || "N/A",
+                        items: items,
+                        total: total
+                    };
+
+                    fetchedOrders.push(order);
+                });
+
+                setOrders(fetchedOrders);
+                setStats({
+                    totalOrders: fetchedOrders.length,
+                    totalRevenue,
+                    pendingOrders,
+                    completedOrders
+                });
+            } catch (error) {
+                console.error("Error loading orders:", error);
+                setOrders([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadOrders();
+    }, []);
 
     const filters: FilterOption[] = [
         { label: 'All', value: 'all', count: orders.length },
-        { label: 'Completed', value: 'Completed', count: orders.filter(o => o.status === 'Completed').length },
-        { label: 'Processing', value: 'Processing', count: orders.filter(o => o.status === 'Processing').length },
-        { label: 'Pending', value: 'Pending', count: orders.filter(o => o.status === 'Pending').length },
-        { label: 'Shipped', value: 'Shipped', count: orders.filter(o => o.status === 'Shipped').length },
-        { label: 'Cancelled', value: 'Cancelled', count: orders.filter(o => o.status === 'Cancelled').length }
+        { label: 'Completed', value: 'completed', count: orders.filter(o => o.status === 'completed').length },
+        { label: 'Processing', value: 'processing', count: orders.filter(o => o.status === 'processing').length },
+        { label: 'Pending', value: 'pending', count: orders.filter(o => o.status === 'pending').length },
+        { label: 'Shipped', value: 'shipped', count: orders.filter(o => o.status === 'shipped').length },
+        { label: 'Cancelled', value: 'cancelled', count: orders.filter(o => o.status === 'cancelled').length }
     ];
 
     const getStatusVariant = (status: Order['status']): "default" | "secondary" | "destructive" | "outline" => {
         switch (status) {
-            case 'Completed': return 'default';
-            case 'Processing': return 'secondary';
-            case 'Pending': return 'outline';
-            case 'Shipped': return 'secondary';
-            case 'Cancelled': return 'destructive';
+            case 'completed': return 'default';
+            case 'processing': return 'secondary';
+            case 'pending': return 'outline';
+            case 'shipped': return 'secondary';
+            case 'cancelled': return 'destructive';
             default: return 'outline';
         }
     };
 
+    const getStatusDisplay = (status: Order['status']): string => {
+        return capitalize(status);
+    };
+
     const filteredOrders = orders.filter(order => {
         const matchesFilter = selectedFilter === 'all' || order.status === selectedFilter;
-        const matchesSearch = order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        const matchesSearch =
+            order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
             order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            order.email.toLowerCase().includes(searchTerm.toLowerCase());
+            order.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            order.phone.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesFilter && matchesSearch;
     });
 
     return (
         <div className="space-y-6 p-4 md:p-6">
-            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-bold text-foreground">Orders</h1>
                     <p className="text-sm text-muted-foreground mt-1">Manage all customer orders</p>
                 </div>
-                <div className="flex gap-2">
-                    <Button className="bg-primary hover:bg-primary/90">
-                        <Download className="w-4 h-4 mr-2" />
-                        <span className="hidden sm:inline">Export</span>
-                    </Button>
-                </div>
+
             </div>
 
-            {/* Stats Grid */}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {orderStats.map((stat, index) => {
                     const Icon = stat.icon;
                     return (
                         <Card key={index} className="hover:shadow-lg transition-shadow duration-200">
                             <CardContent className="p-4">
-                                <div className="flex items-center gap-4">
-                                    <div className={`${stat.color} w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0`}>
+                                <div className="flex  items-center gap-4">
+                                    <div className={`${stat.color} w-12 h-12 rounded-xl flex items-center justify-center shrink-0`}>
                                         <Icon className="w-6 h-6 text-white" />
                                     </div>
                                     <div className="flex-1">
                                         <p className="text-sm text-muted-foreground font-medium">{stat.title}</p>
                                         <h3 className="text-xl font-bold text-foreground mt-1">{stat.value}</h3>
-                                        <div className="flex items-center gap-1 mt-1">
-                                            <TrendingUp className="w-4 h-4 text-green-600" />
-                                            <span className="text-sm font-medium text-green-600">{stat.change}</span>
-                                            <span className="text-xs text-muted-foreground ml-1">vs last month</span>
-                                        </div>
                                     </div>
                                 </div>
                             </CardContent>
@@ -250,35 +293,33 @@ export default function OrdersPage() {
                 })}
             </div>
 
-            {/* Controls Bar */}
+
             <div className="flex flex-col md:flex-row gap-4">
-                {/* Search */}
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
-                        placeholder="Search orders by customer, ID, or email..."
+                        placeholder="Search orders by customer, ID, email, or phone..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-10"
                     />
                 </div>
 
-                {/* Date Range Selector */}
+
                 <Select value={dateRange} onValueChange={setDateRange}>
                     <SelectTrigger className="w-full md:w-[180px]">
                         <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
                         <SelectValue placeholder="Select date range" />
                     </SelectTrigger>
                     <SelectContent>
+                        <SelectItem value="all">All Time</SelectItem>
                         <SelectItem value="last-7-days">Last 7 days</SelectItem>
                         <SelectItem value="last-30-days">Last 30 days</SelectItem>
                         <SelectItem value="last-90-days">Last 90 days</SelectItem>
                         <SelectItem value="this-month">This month</SelectItem>
-                        <SelectItem value="last-month">Last month</SelectItem>
                     </SelectContent>
                 </Select>
 
-                {/* Filter Tabs */}
                 <div className="flex-1">
                     <Tabs value={selectedFilter} onValueChange={setSelectedFilter}>
                         <TabsList className="flex w-full overflow-x-auto">
@@ -286,7 +327,7 @@ export default function OrdersPage() {
                                 <TabsTrigger
                                     key={filter.value}
                                     value={filter.value}
-                                    className="flex-shrink-0 data-[state=active]:bg-primary data-[state=active]:text-white"
+                                    className="shrink-0 data-[state=active]:bg-primary data-[state=active]:text-white"
                                 >
                                     {filter.label}
                                     <Badge
@@ -302,151 +343,133 @@ export default function OrdersPage() {
                 </div>
             </div>
 
-            {/* Results Info */}
+
             <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
                     Showing <span className="font-bold text-foreground">{filteredOrders.length}</span> of <span className="font-bold text-foreground">{orders.length}</span> orders
                 </p>
             </div>
 
-            {/* Table View with horizontal scroll on mobile */}
+            {/* Table View */}
             <Card>
                 <CardHeader className="pb-3">
                     <CardTitle>Order List</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="overflow-x-auto -mx-2 sm:mx-0">
-                        <div className="min-w-full px-2 sm:px-0">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="whitespace-nowrap">Order ID</TableHead>
-                                        <TableHead className="whitespace-nowrap">Customer</TableHead>
-                                        <TableHead className="whitespace-nowrap hidden sm:table-cell">Products</TableHead>
-                                        <TableHead className="whitespace-nowrap">Qty</TableHead>
-                                        <TableHead className="whitespace-nowrap">Amount</TableHead>
-                                        <TableHead className="whitespace-nowrap hidden md:table-cell">Date</TableHead>
-                                        <TableHead className="whitespace-nowrap">Status</TableHead>
-                                        <TableHead className="whitespace-nowrap text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredOrders.map((order) => (
-                                        <TableRow key={order.id}>
-                                            <TableCell className="font-medium whitespace-nowrap">{order.id}</TableCell>
-                                            <TableCell className="whitespace-nowrap">
-                                                <div>
-                                                    <p className="font-medium text-foreground">{order.customer}</p>
-                                                    <p className="text-xs text-muted-foreground sm:hidden">{order.email.substring(0, 15)}...</p>
-                                                    <p className="text-xs text-muted-foreground hidden sm:block">{order.email}</p>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="hidden sm:table-cell">
-                                                <p className="text-sm text-muted-foreground max-w-xs truncate">{order.products}</p>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline" className="font-medium whitespace-nowrap">
-                                                    {order.quantity}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="font-bold whitespace-nowrap">{order.amount}</TableCell>
-                                            <TableCell className="hidden md:table-cell whitespace-nowrap">
-                                                <div className="flex items-center gap-2">
-                                                    <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                                                    <span className="text-sm">{order.date}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant={getStatusVariant(order.status)} className="whitespace-nowrap">
-                                                    {order.status}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-1 sm:gap-2">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3"
-                                                        onClick={() => setSelectedOrder(order)}
-                                                    >
-                                                        <Eye className="w-4 h-4" />
-                                                        <span className="hidden sm:inline ml-2">View</span>
-                                                    </Button>
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="outline" size="sm" className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3">
-                                                                <MoreVertical className="w-4 h-4" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onClick={() => setSelectedOrder(order)}>
-                                                                <Eye className="w-4 h-4 mr-2" />
-                                                                View Details
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem>
-                                                                <Download className="w-4 h-4 mr-2" />
-                                                                Download Invoice
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem className="text-destructive">
-                                                                Cancel Order
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                   
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                    {loading ? (
+                        <div className="text-center py-8">Loading orders...</div>
+                    ) : filteredOrders.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                            No orders found
                         </div>
-                    </div>
+                    ) : (
+                        <div className="overflow-x-auto -mx-2 sm:mx-0">
+                            <div className="min-w-full px-2 sm:px-0">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="whitespace-nowrap">Order ID</TableHead>
+                                            <TableHead className="whitespace-nowrap">Customer</TableHead>
+                                            <TableHead className="whitespace-nowrap hidden sm:table-cell">Products</TableHead>
+                                            <TableHead className="whitespace-nowrap">Qty</TableHead>
+                                            <TableHead className="whitespace-nowrap">Amount</TableHead>
+                                            <TableHead className="whitespace-nowrap hidden md:table-cell">Date</TableHead>
+                                            <TableHead className="whitespace-nowrap">Status</TableHead>
+                                            <TableHead className="whitespace-nowrap text-right">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredOrders.map((order) => (
+                                            <TableRow key={order.id}>
+                                                <TableCell className="font-medium whitespace-nowrap">
+                                                    <span className="text-xs md:text-sm">{order.id.substring(0, 8)}...</span>
+                                                </TableCell>
+                                                <TableCell className="whitespace-nowrap">
+                                                    <div>
+                                                        <p className="font-medium text-foreground">{order.customer}</p>
+                                                        <p className="text-xs text-muted-foreground">{order.phone}</p>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="hidden sm:table-cell">
+                                                    <p className="text-sm text-muted-foreground max-w-xs truncate">{order.products}</p>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline" className="font-medium whitespace-nowrap">
+                                                        {order.quantity}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="font-bold whitespace-nowrap">{order.amount}</TableCell>
+                                                <TableCell className="hidden md:table-cell whitespace-nowrap">
+                                                    <div className="flex items-center gap-2">
+                                                        <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                                                        <span className="text-sm">{order.date}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant={getStatusVariant(order.status)} className="whitespace-nowrap">
+                                                        {getStatusDisplay(order.status)}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-1 sm:gap-2">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3"
+                                                            onClick={() => setSelectedOrder(order)}
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                            <span className="hidden sm:inline ml-2">View</span>
+                                                        </Button>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="outline" size="sm" className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3">
+                                                                    <MoreVertical className="w-4 h-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem onClick={() => setSelectedOrder(order)}>
+                                                                    <Eye className="w-4 h-4 mr-2" />
+                                                                    View Details
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem>
+                                                                    <Download className="w-4 h-4 mr-2" />
+                                                                    Download Invoice
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem className="text-destructive">
+                                                                    Cancel Order
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
-            {/* Pagination */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
-                <div className="text-sm text-muted-foreground">
-                    Page <span className="font-bold text-foreground">1</span> of <span className="font-bold text-foreground">3</span>
-                </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" disabled>
-                        Previous
-                    </Button>
-                    <Button variant="outline" className="bg-muted">
-                        1
-                    </Button>
-                    <Button variant="outline">
-                        2
-                    </Button>
-                    <Button variant="outline">
-                        3
-                    </Button>
-                    <Button variant="outline">
-                        Next
-                    </Button>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                    {filteredOrders.length} orders per page
-                </div>
-            </div>
-
             {/* Order Detail Dialog */}
             <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Order Details</DialogTitle>
+                        <DialogTitle>Order Details - {selectedOrder?.id}</DialogTitle>
                     </DialogHeader>
 
                     {selectedOrder && (
                         <div className="space-y-6">
                             <Separator />
-
-                            {/* Order Info Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-4">
-                                    <div>
-                                        <h4 className="text-sm font-semibold text-muted-foreground mb-3">Order Information</h4>
+                                <div className="space-y-6">                                   
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                            <Calendar className="w-4 h-4" />
+                                            Order Information
+                                        </h4>
                                         <div className="space-y-3">
                                             <div className="flex justify-between">
                                                 <span className="text-sm text-muted-foreground">Order ID:</span>
@@ -459,14 +482,22 @@ export default function OrdersPage() {
                                             <div className="flex justify-between">
                                                 <span className="text-sm text-muted-foreground">Status:</span>
                                                 <Badge variant={getStatusVariant(selectedOrder.status)}>
-                                                    {selectedOrder.status}
+                                                    {getStatusDisplay(selectedOrder.status)}
                                                 </Badge>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-sm text-muted-foreground">Delivery Method:</span>
+                                                <span className="text-sm text-foreground">{capitalize(selectedOrder.deliveryMethod)}</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <h4 className="text-sm font-semibold text-muted-foreground mb-3">Customer</h4>
+                                
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                            <User className="w-4 h-4" />
+                                            Customer Information
+                                        </h4>
                                         <div className="space-y-3">
                                             <div className="flex justify-between">
                                                 <span className="text-sm text-muted-foreground">Name:</span>
@@ -476,21 +507,33 @@ export default function OrdersPage() {
                                                 <span className="text-sm text-muted-foreground">Email:</span>
                                                 <span className="text-sm text-foreground">{selectedOrder.email}</span>
                                             </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-sm text-muted-foreground">Phone:</span>
+                                                <span className="text-sm text-foreground">{selectedOrder.phone}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <div>
-                                        <h4 className="text-sm font-semibold text-muted-foreground mb-3">Payment & Products</h4>
+                                <div className="space-y-6">
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold text-muted-foreground">Payment Information</h4>
                                         <div className="space-y-3">
                                             <div className="flex justify-between">
                                                 <span className="text-sm text-muted-foreground">Payment Method:</span>
-                                                <span className="text-sm text-foreground">{selectedOrder.payment}</span>
+                                                <span className="text-sm text-foreground">{capitalize(selectedOrder.paymentMethod)}</span>
                                             </div>
                                             <div className="flex justify-between">
-                                                <span className="text-sm text-muted-foreground">Quantity:</span>
-                                                <span className="text-sm font-bold text-foreground">{selectedOrder.quantity}</span>
+                                                <span className="text-sm text-muted-foreground">Payment Status:</span>
+                                                <Badge variant={
+                                                    selectedOrder.paymentStatus.toLowerCase().includes('paid')
+                                                        ? 'default'
+                                                        : selectedOrder.paymentStatus.toLowerCase().includes('pending')
+                                                            ? 'outline'
+                                                            : 'destructive'
+                                                }>
+                                                    {selectedOrder.paymentStatus}
+                                                </Badge>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-sm text-muted-foreground">Total Amount:</span>
@@ -499,18 +542,63 @@ export default function OrdersPage() {
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <h4 className="text-sm font-semibold text-muted-foreground mb-3">Products Ordered</h4>
-                                        <div className="p-3 bg-muted rounded-lg">
-                                            <p className="text-sm text-muted-foreground">{selectedOrder.products}</p>
+                                    {/* Delivery Address */}
+                                    {selectedOrder.deliveryAddress && (
+                                        <div className="space-y-3">
+                                            <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                                                <MapPin className="w-4 h-4" />
+                                                Delivery Address
+                                            </h4>
+                                            <div className="p-3 bg-muted rounded-lg space-y-2">
+                                                <p className="text-sm text-foreground">{selectedOrder.deliveryAddress.address}</p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {selectedOrder.deliveryAddress.city}, {selectedOrder.deliveryAddress.state}, {selectedOrder.deliveryAddress.country}
+                                                </p>
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Products Ordered */}
+                            <div className="space-y-3">
+                                <h4 className="text-sm font-semibold text-muted-foreground">Products Ordered</h4>
+                                <div className="space-y-3">
+                                    {selectedOrder.items.map((item, index) => (
+                                        <div key={item.id || index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-gray-200 rounded-md overflow-hidden">
+                                                    {item.image && (
+                                                        <Image
+                                                            src={item.image}
+                                                            alt={item.name}
+                                                            width={500}
+                                                            height={500}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium text-foreground">{item.name}</p>
+                                                    <p className="text-xs text-muted-foreground">₦{item.price.toLocaleString()} each</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-sm font-medium text-foreground">x{item.quantity}</p>
+                                                <p className="text-sm font-bold text-foreground">₦{(item.price * item.quantity).toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="flex justify-between items-center pt-3 border-t">
+                                    <span className="text-sm font-medium text-foreground">Total Items:</span>
+                                    <span className="text-sm font-bold text-foreground">{selectedOrder.quantity}</span>
                                 </div>
                             </div>
 
                             <Separator />
 
-                            {/* Action Buttons */}
+                     
                             <div className="flex flex-col sm:flex-row gap-3">
                                 <Button variant="outline" className="flex-1">
                                     Print Invoice
@@ -519,6 +607,7 @@ export default function OrdersPage() {
                                     Update Status
                                 </Button>
                                 <Button variant="default" className="flex-1">
+                                    <Phone className="w-4 h-4 mr-2" />
                                     Contact Customer
                                 </Button>
                             </div>
