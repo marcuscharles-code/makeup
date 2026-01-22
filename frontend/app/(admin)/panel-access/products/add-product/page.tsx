@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, ChangeEvent, FormEvent } from 'react';
+import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
+import { getDocs, query, where } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import ProductImageUpload from './components/ProductImageUpload'
 import { VariantBuilder, VariantItem } from './components/VariantBuilder'
@@ -24,6 +25,14 @@ interface ProductImage {
         publicId: string;
     };
 }
+
+interface Category {
+    id: string;
+    name: string;
+    slug: string;
+    isActive: boolean;
+}
+
 
 interface ProductVariant {
     id: string;
@@ -56,6 +65,8 @@ interface ProductData {
 
 export default function Page() {
     const router = useRouter();
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [categoriesLoading, setCategoriesLoading] = useState(true);
     const [product, setProduct] = useState<ProductData>({
         name: '',
         description: '',
@@ -78,6 +89,38 @@ export default function Page() {
     const [currentOption, setCurrentOption] = useState<string>('');
     const [selectedVariantForImage, setSelectedVariantForImage] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const q = query(
+                    collection(db, 'categories'),
+                    where('isActive', '==', true)
+                );
+
+                const snapshot = await getDocs(q);
+
+                const fetchedCategories: Category[] = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    name: doc.data().name,
+                    slug: doc.data().slug,
+                    isActive: doc.data().isActive,
+                }));
+
+                setCategories(fetchedCategories);
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+            } finally {
+                setCategoriesLoading(false);
+            }
+        };
+
+        fetchCategories();
+    }, []);
+
+
 
     const handleInputChange = (name: keyof ProductData, value: string) => {
         setProduct(prev => ({ ...prev, [name]: value }));
@@ -328,6 +371,8 @@ export default function Page() {
                         <BasicInfoSection
                             product={product}
                             onInputChange={handleInputChange}
+                            categories={categories}
+                            categoriesLoading={categoriesLoading}
                         />
                     </CardContent>
                 </Card>

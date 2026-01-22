@@ -134,7 +134,7 @@ export default function ProductListPage() {
             {/* Add New Button */}
             <Button
               onClick={() => router.push('/panel-access/products/add-product')}
-              className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto whitespace-nowrap">
+              variant='default'>
               <Plus className="w-4 h-4 mr-2" />
               Add new
             </Button>

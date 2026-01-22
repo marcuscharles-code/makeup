@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
-
+import Image from 'next/image';
 import React, { useState } from 'react';
+import logo from '@/public/images/Fragrancebynayalogo2.png'
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,12 +10,15 @@ import {
     Users,
     Settings,
     ShoppingBag,
-    BarChart3,
-    Tags,
     LogOut,
     Menu,
     X,
-    Sparkles
+    Sparkles,
+    Package,
+    MapPin,
+    PlusCircle,
+    FolderTree,
+    Home,
 } from 'lucide-react';
 
 export function AdminSidebar(
@@ -28,7 +32,6 @@ export function AdminSidebar(
 ) {
     const router = useRouter();
     const [activeMenu, setActiveMenu] = useState('dashboard');
-    const [productsExpanded, setProductsExpanded] = useState(false);
 
     const menuItems = [
         {
@@ -37,16 +40,29 @@ export function AdminSidebar(
             icon: LayoutDashboard,
             path: '/panel-access'
         },
-
-        { id: 'all-products', label: 'All Products', icon: ShoppingBag, path: '/panel-access/products' },
-        { id: 'add-product', label: 'Add New', icon: Sparkles },
-        { id: 'categories', label: 'Categories', icon: Tags },
+        {
+            id: 'products',
+            label: 'All Products',
+            icon: Package,
+            path: '/panel-access/products'
+        },
+        {
+            id: 'add-product',
+            label: 'Add Product',
+            icon: PlusCircle,
+            path: '/panel-access/products/add-product'
+        },
+        {
+            id: 'categories',
+            label: 'Categories',
+            icon: FolderTree,
+            path: '/panel-access/category'
+        },
         {
             id: 'orders',
             label: 'Orders',
             icon: ShoppingBag,
-            path: '/panel-access/orders',
-            badge: '12'
+            path: '/panel-access/orders'
         },
         {
             id: 'customers',
@@ -55,87 +71,104 @@ export function AdminSidebar(
             path: '/panel-access/customers'
         },
         {
-            id: 'analytics',
-            label: 'Analytics',
-            icon: BarChart3,
-            path: '/admin/analytics'
+            id: 'pickup-address',
+            label: 'Pickup Address',
+            icon: MapPin,
+            path: '/panel-access/address'
         },
         {
             id: 'settings',
             label: 'Settings',
             icon: Settings,
-            path: '/admin/settings'
+            path: '/panel-access/settings'
         }
     ];
 
-    const handleMenuClick = (menuId: string, path?: string) => {
-        if (menuId === 'products') {
-            setProductsExpanded(!productsExpanded);
-        } else if (path) {
-            router.push(path);
-        }
+    const handleMenuClick = (menuId: string, path: string) => {
+        router.push(path);
         setActiveMenu(menuId);
     };
 
+    const isActive = (menuId: string) => activeMenu === menuId;
 
     return (
         <div
-            className={`fixed md:relative top-0 left-0 h-screen z-50 bg-black text-white transition-all duration-300 ${isCollapsed ? '-translate-x-full md:translate-x-0 md:w-20' : 'translate-x-0 w-64'}`} >
+            className={`fixed md:relative top-0 left-0 h-screen z-50 bg-white text-black transition-all duration-300 ${isCollapsed ? '-translate-x-full md:translate-x-0 md:w-20' : 'translate-x-0 w-64'}`} >
 
-            <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800">
+
+            <div className="h-24 flex items-center justify-between px-4 border-b border-gray-800">
+                {!isCollapsed && (
+                    <div className="w-full h-24 flex items-center">
+                        <Image
+                            src={logo}
+                            alt=''
+                            className='object-contain'
+                        />
+                    </div>
+                )}
                 <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="text-white "
+                    className="text-black hover:bg-gray-800 hover:text-white"
                 >
                     {isCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
                 </Button>
             </div>
 
-            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            {/* Navigation */}
+            <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
                 {menuItems.map((item) => {
                     const Icon = item.icon;
-                    const isActive = activeMenu === item.id;
+                    const active = isActive(item.id);
 
                     return (
-                        <div key={item.id}>
-                            <Button
-                                onClick={() => handleMenuClick(item.id, item.path)}
-                                className={`w-full justify-start gap-3 h-11 ${isActive
-                                    ? 'text-black bg-white hover:bg-white'
-                                    : 'text-white '
-                                    } ${isCollapsed ? 'px-3' : 'px-4'}`}
-                            >
-                                <Icon className="w-5 h-5 shrink-0" />
-                                {!isCollapsed && (
-                                    <>
-                                        <span className="flex-1 text-left">{item.label}</span>
-                                        {item.badge && (
-                                            <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                                                {item.badge}
-                                            </span>
-                                        )}
-                                    </>
-                                )}
-                            </Button>
-                        </div>
+                        <Button
+                            key={item.id}
+                            onClick={() => handleMenuClick(item.id, item.path)}
+                            className={`w-full justify-start gap-3 h-12 mb-1 transition-all ${active
+                                ? 'bg-gray-800 text-white shadow-lg'
+                                : 'text-black hover:bg-gray-800 hover:text-white hover:shadow-md'
+                                } ${isCollapsed ? 'px-3' : 'px-4'}`}
+                            variant="ghost"
+                        >
+                            <Icon className="w-5 h-5 shrink-0" />
+                            {!isCollapsed && (
+                                <>
+                                    <span className="flex-1 text-left font-medium">{item.label}</span>
+                                    {active && (
+                                        <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                                    )}
+                                </>
+                            )}
+                        </Button>
                     );
                 })}
             </nav>
 
-            <div className="p-3 border-t border-slate-800">
 
-                {!isCollapsed && (
-                    <Button
-                        variant="ghost"
-                        className="w-full justify-start gap-3 mt-2 text-slate-300 hover:bg-slate-800 hover:text-white"
-                    >
-                        <LogOut className="w-5 h-5" />
-                        <span>Logout</span>
-                    </Button>
-                )}
+            <div className="p-4 border-t border-gray-200 space-y-2">
+                <Button
+                    variant="ghost"
+                    className={`w-full flex items-center gap-3 text-black hover:bg-gray-800 hover:text-white ${isCollapsed ? 'justify-center px-0' : 'justify-start'
+                        }`}
+                    onClick={() => router.push('/')}
+                >
+                    <Home className="w-4 h-4 shrink-0" />
+                    {!isCollapsed && <span>Back to Store</span>}
+                </Button>
+
+                <Button
+                    variant="ghost"
+                    className={`w-full flex items-center gap-3 text-black hover:bg-gray-800 hover:text-white ${isCollapsed ? 'justify-center px-0' : 'justify-start'
+                        }`}
+                    onClick={() => router.push('/')}
+                >
+                    <LogOut className="w-4 h-4 shrink-0" />
+                    {!isCollapsed && <span>Logout</span>}
+                </Button>
             </div>
+
         </div>
     );
 }
@@ -147,6 +180,8 @@ export function AdminNavbar({
     title?: string;
     onMenuClick: () => void;
 }) {
+    const router = useRouter();
+
     return (
         <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
             <div className="flex items-center gap-3">
@@ -160,11 +195,22 @@ export function AdminNavbar({
                 </Button>
 
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-900">{title}</h2>
+                    <h1 className="text-xl font-bold text-gray-900">{title}</h1>
+                    <p className="text-xs text-gray-500 hidden md:block">E-commerce Admin Dashboard</p>
                 </div>
             </div>
 
             <div className="flex items-center gap-4">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="hidden md:flex items-center gap-2"
+                    onClick={() => router.push('/panel-access/quick-links')}
+                >
+                    <Sparkles className="w-4 h-4" />
+                    Go to Store
+                </Button>
+            
                 <Button variant="outline" size="icon">
                     <Settings className="w-5 h-5" />
                 </Button>

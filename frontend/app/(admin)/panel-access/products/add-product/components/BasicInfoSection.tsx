@@ -5,14 +5,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { DollarSign, Package, Tag } from 'lucide-react';
-// Types
 interface ProductImage {
     id: string;
     url: string;
     file: File;
     name: string;
 }
-
 interface ProductVariant {
     id: string;
     type: string;
@@ -22,9 +20,6 @@ interface ProductVariant {
     sku: string;
     imageId: string | null;
 }
-
-
-
 interface ProductData {
     name: string;
     description: string;
@@ -38,18 +33,19 @@ interface ProductData {
     images: ProductImage[];
     variants: ProductVariant[];
 }
-
-// Constants
-const categories = ['Perfume', 'Cologne', 'Body Spray', 'Gift Set', 'Travel Size'];
-
-
-
+interface Category {
+    id: string;
+    name: string;
+    slug: string;
+}
 interface BasicInfoSectionProps {
     product: ProductData;
     onInputChange: (name: keyof ProductData, value: string) => void;
+    categories: Category[];
+    categoriesLoading: boolean;
 }
 
-export function BasicInfoSection({ product, onInputChange }: BasicInfoSectionProps) {
+export function BasicInfoSection({ product, onInputChange, categories, categoriesLoading }: BasicInfoSectionProps) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2 space-y-2">
@@ -84,8 +80,22 @@ export function BasicInfoSection({ product, onInputChange }: BasicInfoSectionPro
                         <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                        {categories.map(cat => (
-                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        {categoriesLoading && (
+                            <SelectItem value="loading" disabled>
+                                Loading categories...
+                            </SelectItem>
+                        )}
+
+                        {!categoriesLoading && categories.length === 0 && (
+                            <SelectItem value="none" disabled>
+                                No categories found
+                            </SelectItem>
+                        )}
+
+                        {categories.map(category => (
+                            <SelectItem key={category.id} value={category.slug}>
+                                {category.name}
+                            </SelectItem>
                         ))}
                     </SelectContent>
                 </Select>

@@ -4,10 +4,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/firebaseConfig';
 import { getAuth } from 'firebase/auth';
-import { Truck, Store, Info, Loader2, CreditCard, Building } from 'lucide-react';
+import { Truck, Store, Info, Loader2, CreditCard, Building, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +27,7 @@ export default function CheckoutPage() {
     const [deliveryMethod, setDeliveryMethod] = useState('ship');
     const [paymentMethod, setPaymentMethod] = useState('paystack');
     const [billingAddress, setBillingAddress] = useState('same');
+    const [pickupLocations, setPickupLocations] = useState<any[]>([]);
     const [discountCode, setDiscountCode] = useState('');
     const [cartItems, setCartItems] = useState<any[]>([]);
     const [subtotal, setSubtotal] = useState(0);
@@ -38,7 +39,7 @@ export default function CheckoutPage() {
     const [address, setAddress] = useState('');
     const [city, setCity] = useState('');
     const [state, setState] = useState('lagos');
-    const [selectedPickupLocation, setSelectedPickupLocation] = useState('jabi');
+    const [selectedPickupLocation, setSelectedPickupLocation] = useState<string>('');
     const formRef = useRef<HTMLFormElement>(null);
 
     useEffect(() => {
@@ -58,7 +59,6 @@ export default function CheckoutPage() {
             setCartItems(data.items || []);
             setSubtotal(data.total || 0);
 
-            // Pre-fill delivery method if already set
             if (data.deliveryMethod) {
                 setDeliveryMethod(data.deliveryMethod);
             }
@@ -70,39 +70,63 @@ export default function CheckoutPage() {
         fetchOrder();
     }, [orderId]);
 
+
+    useEffect(() => {
+        const fetchPickupLocations = async () => {
+            try {
+                const pickupRef = collection(db, 'pickupAddresses');
+                const querySnapshot = await getDocs(pickupRef);
+
+                const locations = querySnapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        name: data.name || 'Unnamed Location',
+                        address: data.address || '',
+                        city: data.city || '',
+                        state: data.state || '',
+                        businessHours: data.businessHours || {
+                            opening: '09:00',
+                            closing: '18:00',
+                            days: ['Mon-Fri']
+                        },
+                        isDefault: data.isDefault || false,
+                        isActive: data.isActive !== false,
+                        free: true,
+                        readyTime: 'Usually ready in 2-4 days',
+                        distance: 'Within city'
+                    };
+                });
+                const activeLocations = locations.filter(loc => loc.isActive);
+                activeLocations.sort((a, b) => {
+                    if (a.isDefault && !b.isDefault) return -1;
+                    if (!a.isDefault && b.isDefault) return 1;
+                    return 0;
+                });
+
+                setPickupLocations(activeLocations);
+                if (activeLocations.length > 0) {
+                    const defaultLocation = activeLocations.find(loc => loc.isDefault);
+                    if (defaultLocation) {
+                        setSelectedPickupLocation(defaultLocation.id);
+                    } else {
+                        setSelectedPickupLocation(activeLocations[0].id);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching pickup locations:', error);
+            }
+        };
+
+        fetchPickupLocations();
+    }, []);
+
     const taxes = 200;
     const shippingCost = deliveryMethod === 'ship' ? (subtotal >= 130000 ? 0 : 1500) : 0;
     const total = subtotal + taxes + shippingCost;
     const amountInKobo = total * 100;
 
-    // Pickup locations data
-    const pickupLocations = [
-        {
-            id: 'palms',
-            name: 'ESSENZA PALMS LAGOS',
-            distance: '434.9 km',
-            address: '1 Bisway Street, Lekki LA',
-            readyTime: 'Usually ready in 2-4 days',
-            free: true
-        },
-        {
-            id: 'ikeja',
-            name: 'ICM Essenza Ikeja',
-            distance: '452.8 km',
-            address: '194 Obafemi Awolowo Way, Ikeja LA',
-            readyTime: 'Usually ready in 2-4 days',
-            free: true
-        },
-        {
-            id: 'jabi',
-            name: 'ESSENZA JABI MALL',
-            distance: '480.5 km',
-            address: 'Bala Sokoto Way, Jabi 240102., Abuja FC',
-            readyTime: 'Usually ready in 2-4 days',
-            free: true,
-            selected: true
-        }
-    ];
+
 
     const verifyPayment = async (reference: string) => {
         try {
@@ -569,26 +593,108 @@ IMPORTANT:
                                             onValueChange={setSelectedPickupLocation}
                                             className="space-y-3"
                                         >
-                                            {pickupLocations.map((location) => (
-                                                <div
-                                                    key={location.id}
-                                                    className={`border-2 rounded-lg p-4 ${selectedPickupLocation === location.id ? 'border-red-600 bg-red-50' : 'border-gray-200'}`}
-                                                >
-                                                    <div className="flex items-start justify-between">
-                                                        <div className="flex items-start space-x-3">
-                                                            <RadioGroupItem value={location.id} id={location.id} className="mt-1" />
-                                                            <div>
-                                                                <Label htmlFor={location.id} className="cursor-pointer font-medium">
-                                                                    {location.name} <span className="text-gray-500 font-normal">({location.distance})</span>
-                                                                </Label>
-                                                                <p className="text-sm text-gray-600 mt-1">{location.address}</p>
-                                                                <p className="text-xs text-gray-500 mt-1">{location.readyTime}</p>
+                                            {pickupLocations.map((location) => {
+                                                const formatBusinessDays = (days: string[]) => {
+                                                    if (days.length === 7) return 'Everyday';
+                                                    if (days.includes('Monday') && days.includes('Friday') && days.length === 5) {
+                                                        return 'Monday - Friday';
+                                                    }
+                                                    return days.join(', ');
+                                                };
+
+                                                return (
+                                                    <div
+                                                        key={location.id}
+                                                        className={`border-2 rounded-lg p-4 ${selectedPickupLocation === location.id ? 'border-red-600 bg-red-50' : 'border-gray-200'}`}
+                                                    >
+                                                        <div className="flex items-start justify-between">
+                                                            <div className="flex items-start space-x-3">
+                                                                <RadioGroupItem
+                                                                    value={location.id}
+                                                                    id={location.id}
+                                                                    className="mt-1"
+                                                                />
+                                                                <div className="w-full">
+                                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                                        <Label htmlFor={location.id} className="cursor-pointer font-medium text-base">
+                                                                            {location.name}
+                                                                        </Label>
+                                                                        {location.isDefault && (
+                                                                            <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">
+                                                                                Default
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {/* Address Details */}
+                                                                    <div className="mt-2 space-y-1">
+                                                                        <p className="text-sm font-medium text-gray-900">{location.address}</p>
+                                                                        <p className="text-sm text-gray-600">
+                                                                            {location.city}, {location.state} {location.zipCode ? `• ${location.zipCode}` : ''}
+                                                                        </p>
+                                                                        {location.country && (
+                                                                            <p className="text-xs text-gray-500">{location.country}</p>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {/* Contact Information */}
+                                                                    {(location.contactPerson || location.phone || location.email) && (
+                                                                        <div className="mt-2 pt-2 border-t border-gray-100">
+                                                                            <p className="text-xs font-medium text-gray-700 mb-1">Contact:</p>
+                                                                            <div className="space-y-1">
+                                                                                {location.contactPerson && (
+                                                                                    <p className="text-sm text-gray-600">{location.contactPerson}</p>
+                                                                                )}
+                                                                                {location.phone && (
+                                                                                    <p className="text-sm text-gray-600">{location.phone}</p>
+                                                                                )}
+                                                                                {location.email && (
+                                                                                    <p className="text-sm text-gray-600 truncate">{location.email}</p>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Business Hours */}
+                                                                    {location.businessHours && (
+                                                                        <div className="mt-2 pt-2 border-t border-gray-100">
+                                                                            <div className="flex items-start gap-2">
+                                                                                <Clock className="w-3 h-3 text-gray-400 mt-0.5 flex-shrink-0" />
+                                                                                <div className="flex-1">
+                                                                                    <p className="text-xs font-medium text-gray-700 mb-1">Business Hours:</p>
+                                                                                    <p className="text-sm text-gray-600">
+                                                                                        {location.businessHours.opening} - {location.businessHours.closing}
+                                                                                    </p>
+                                                                                    <p className="text-xs text-gray-500 mt-0.5">
+                                                                                        {formatBusinessDays(location.businessHours.days)}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Additional Instructions */}
+                                                                    {location.instructions && (
+                                                                        <div className="mt-2 pt-2 border-t border-gray-100">
+                                                                            <p className="text-xs font-medium text-gray-700 mb-1">Instructions:</p>
+                                                                            <p className="text-sm text-gray-600">{location.instructions}</p>
+                                                                        </div>
+                                                                    )}
+
+                                                                    <div className="mt-2 pt-2 border-t border-gray-100">
+                                                                        <p className="text-xs font-medium text-gray-700 mb-1">Pickup Info:</p>
+                                                                        <p className="text-sm text-gray-600">{location.readyTime || 'Usually ready in 2-4 days'}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex flex-col items-end gap-2">
+                                                                <span className="text-sm font-semibold text-green-600">FREE</span>
+                                                                <span className="text-xs text-gray-500">{location.distance}</span>
                                                             </div>
                                                         </div>
-                                                        <span className="text-sm font-semibold text-green-600">FREE</span>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </RadioGroup>
                                     </div>
                                 )}
@@ -660,7 +766,7 @@ IMPORTANT:
 
                             {/* Billing Address */}
                             <div className="bg-white rounded-lg px-6 py-2">
-                              
+
                                 <Button
                                     type="submit"
                                     disabled={isProcessing || !email}
