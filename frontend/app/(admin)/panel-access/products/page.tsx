@@ -28,10 +28,16 @@ import {
   Plus,
   Coffee,
   ChevronRight,
+  Eye,
+  Mail,
+  MoreVertical,
+  Edit,
+  Trash,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/firebaseConfig';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 
 
@@ -155,6 +161,7 @@ export default function ProductListPage() {
                   <TableHead className="text-slate-900 font-semibold">Quantity</TableHead>
                   <TableHead className="text-slate-900 font-semibold">Sale</TableHead>
                   <TableHead className="text-slate-900 font-semibold">Stock</TableHead>
+                  <TableHead className="text-slate-900 font-semibold">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -205,6 +212,38 @@ export default function ProductListPage() {
                           {product.status}
                         </span>
                       </TableCell>
+
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-8 w-8 p-0 sm:h-9 sm:w-auto sm:px-3">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => router.push(`/panel-access/products/view-products/${product.id}`)}
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Product
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                              onClick={() => router.push(`/panel-access/products/edit-products/${product.id}`)}
+
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit Product
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem className="text-red-600 focus:text-red-600">
+                              <Trash className="w-4 h-4 mr-2" />
+                              Delete Product
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+
                     </TableRow>
                   ))
                 )}

@@ -75,12 +75,6 @@ export function AdminSidebar(
             label: 'Pickup Address',
             icon: MapPin,
             path: '/panel-access/address'
-        },
-        {
-            id: 'settings',
-            label: 'Settings',
-            icon: Settings,
-            path: '/panel-access/settings'
         }
     ];
 
@@ -117,7 +111,7 @@ export function AdminSidebar(
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+            <nav className="flex-1 px-3 py-2  overflow-y-auto">
                 {menuItems.map((item) => {
                     const Icon = item.icon;
                     const active = isActive(item.id);
@@ -126,7 +120,7 @@ export function AdminSidebar(
                         <Button
                             key={item.id}
                             onClick={() => handleMenuClick(item.id, item.path)}
-                            className={`w-full justify-start gap-3 h-12 mb-1 transition-all ${active
+                            className={`w-full justify-start gap-3 h-10 mb-1 transition-all ${active
                                 ? 'bg-gray-800 text-white shadow-lg'
                                 : 'text-black hover:bg-gray-800 hover:text-white hover:shadow-md'
                                 } ${isCollapsed ? 'px-3' : 'px-4'}`}
@@ -147,7 +141,7 @@ export function AdminSidebar(
             </nav>
 
 
-            <div className="p-4 border-t border-gray-200 space-y-2">
+            <div className="p-1 border-t border-gray-200 space-y-2">
                 <Button
                     variant="ghost"
                     className={`w-full flex items-center gap-3 text-black hover:bg-gray-800 hover:text-white ${isCollapsed ? 'justify-center px-0' : 'justify-start'

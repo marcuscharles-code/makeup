@@ -183,7 +183,6 @@ export function BasicInfoSection({ product, onInputChange, categories, categorie
                     <SelectContent>
                         <SelectItem value="draft">Draft</SelectItem>
                         <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="archived">Archived</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
