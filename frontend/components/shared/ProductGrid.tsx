@@ -28,8 +28,19 @@ export default function ProductSection({ title, items }: Props) {
   return (
     <div className="my-10 px-6 flex flex-col justify-center">
       <h1 className="text-xl font-semibold">{title}</h1>
-
-      <div className="flex gap-4 overflow-x-auto px-2 py-4">
+      <div
+        className="
+          grid
+          grid-cols-2
+          sm:grid-cols-2
+          md:grid-cols-3
+          lg:grid-cols-4
+          xl:grid-cols-5
+          gap-4
+          px-2
+          py-4
+        "
+      >
         {items.map((product) => {
           const isAdding = addingId === product.id;
           const isAdded = addedId === product.id;
@@ -37,10 +48,21 @@ export default function ProductSection({ title, items }: Props) {
           return (
             <div
               key={product.id}
-              className="border-2 w-[233px] h-[370px] p-4 shrink-0 flex flex-col"
+              className="
+                border-2
+                w-full
+                h-[370px]
+                p-4
+                flex
+                flex-col
+                hover:shadow-md
+                transition
+              "
             >
-              {/* Card clickable part */}
-              <Link href={`/view-product/${product.id}`} className="flex-1 flex flex-col">
+              <Link
+                href={`/view-product/${product.id}`}
+                className="flex-1 flex flex-col"
+              >
                 <div className="flex w-full justify-center h-[180px]">
                   <Image
                     src={product.img?.[0] || '/placeholder.png'}
@@ -74,11 +96,15 @@ export default function ProductSection({ title, items }: Props) {
                 onClick={async () => {
                   try {
                     setAddingId(product.id);
+
                     const cartPayload = {
                       productId: product.id,
                       name: product.title ?? product.name ?? 'Unknown Product',
                       price: product.price ?? product.basePrice ?? 0,
-                      image: product.img?.[0] || product.images?.[0] || '/placeholder.png',
+                      image:
+                        product.img?.[0] ||
+                        product.images?.[0] ||
+                        '/placeholder.png',
                       quantity: 1,
                     };
 

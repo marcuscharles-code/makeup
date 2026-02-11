@@ -1,9 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import { useState, useEffect } from 'react';
-import { Search, ShoppingCart } from 'lucide-react';
+import { Search, ShoppingCart, Menu, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from '@/components/ui/sheet';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
@@ -24,6 +39,7 @@ export default function EssenzaNavbar() {
     const [cartCount, setCartCount] = useState(0);
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     // Auth listener
     useEffect(() => {
@@ -121,6 +137,175 @@ export default function EssenzaNavbar() {
                             </button>
                         </div>
                     )}
+                </div>
+            </div>
+
+            {/* ===== MOBILE HEADER ===== */}
+            <div className="md:hidden">
+                <div className="flex items-center justify-between px-4 py-3">
+                    
+                    {/* Mobile Menu Sheet */}
+                    <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                        <SheetTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="shrink-0"
+                            >
+                                <Menu className="h-6 w-6" />
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="left" className="w-[280px] sm:w-[320px]">
+                            <SheetHeader>
+                                <SheetTitle>Menu</SheetTitle>
+                            </SheetHeader>
+                            
+                            <div className="mt-6 flex flex-col gap-6">
+                                {/* Categories */}
+                                <div>
+                                    <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">Categories</h3>
+                                    <div className="flex flex-col gap-1">
+                                        {categories.map((cat) => (
+                                            <button
+                                                key={cat.id}
+                                                onClick={() => {
+                                                    router.push(`/category/${cat.slug}`);
+                                                    setMobileMenuOpen(false);
+                                                }}
+                                                className="text-sm font-medium hover:text-red-700 transition text-left py-2.5 px-2 rounded-md hover:bg-gray-50"
+                                            >
+                                                {cat.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <Separator />
+
+                                {/* Auth Links */}
+                                <div>
+                                    <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">Account</h3>
+                                    {!user ? (
+                                        <div className="flex flex-col gap-1">
+                                            <Link 
+                                                href="/auth/login" 
+                                                className="text-sm font-medium py-2.5 px-2 rounded-md hover:bg-gray-50"
+                                                onClick={() => setMobileMenuOpen(false)}
+                                            >
+                                                Login
+                                            </Link>
+                                            <Link 
+                                                href="/auth/create-account" 
+                                                className="text-sm font-medium py-2.5 px-2 rounded-md hover:bg-gray-50"
+                                                onClick={() => setMobileMenuOpen(false)}
+                                            >
+                                                Sign Up
+                                            </Link>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col gap-1">
+                                            <Link 
+                                                href="/my-account" 
+                                                className="text-sm font-medium py-2.5 px-2 rounded-md hover:bg-gray-50"
+                                                onClick={() => setMobileMenuOpen(false)}
+                                            >
+                                                My account
+                                            </Link>
+
+                                            <button
+                                                onClick={() => {
+                                                    signOut(auth);
+                                                    setMobileMenuOpen(false);
+                                                }}
+                                                className="text-red-600 text-sm font-medium text-left py-2.5 px-2 rounded-md hover:bg-red-50"
+                                            >
+                                                Logout
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </SheetContent>
+                    </Sheet>
+
+                    {/* Logo */}
+                    <div
+                        onClick={() => router.push('/')}
+                        className="flex items-center cursor-pointer w-20 h-20 relative shrink-0"
+                    >
+                        <Image
+                            src={logo}
+                            alt="logo"
+                            className="h-full w-full object-contain"
+                        />
+                    </div>
+
+                    {/* Cart & User Dropdown */}
+                    <div className="flex items-center gap-2">
+                        {/* Cart */}
+                        <Button
+                            onClick={() => router.push('/cart')}
+                            variant="ghost"
+                            size="icon"
+                            className="relative shrink-0"
+                        >
+                            <ShoppingCart className="h-5 w-5" />
+
+                            {cartCount > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                    {cartCount}
+                                </span>
+                            )}
+                        </Button>
+
+                        {/* User Dropdown */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="shrink-0">
+                                    <User className="h-5 w-5" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                                {!user ? (
+                                    <>
+                                        <DropdownMenuItem asChild>
+                                            <Link href="/auth/login" className="cursor-pointer">
+                                                Login
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <Link href="/auth/create-account" className="cursor-pointer">
+                                                Sign Up
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    </>
+                                ) : (
+                                    <>
+                                        <DropdownMenuItem asChild>
+                                            <Link href="/my-account" className="cursor-pointer">
+                                                My account
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem 
+                                            onClick={() => signOut(auth)}
+                                            className="text-red-600 cursor-pointer"
+                                        >
+                                            Logout
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                </div>
+
+                {/* Mobile Search */}
+                <div className="px-4 pb-3 flex gap-2">
+                    <Input placeholder="Search products..." className="text-sm" />
+                    <Button className="bg-red-700 hover:bg-red-800 shrink-0">
+                        <Search className="h-5 w-5" />
+                    </Button>
                 </div>
             </div>
 
